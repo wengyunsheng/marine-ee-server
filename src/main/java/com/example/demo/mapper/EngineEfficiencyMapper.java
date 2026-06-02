@@ -1,10 +1,10 @@
 package com.example.demo.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.example.demo.entity.EngineEfficiencyLevel;
+import com.example.demo.entity.EngineEfficiency;
 import org.apache.ibatis.annotations.Mapper;
 
 @Mapper
-public interface EngineEfficiencyLevelMapper extends BaseMapper<EngineEfficiencyLevel> {
+public interface EngineEfficiencyMapper extends BaseMapper<EngineEfficiency> {
 
 }

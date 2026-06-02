@@ -9,8 +9,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("engine_efficiency_level")
-public class EngineEfficiencyLevel implements Serializable {
+@TableName("engine_efficiency")
+public class EngineEfficiency implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
