@@ -51,7 +51,7 @@ public class FileUploadUtil {
         Path path = Paths.get(uploadPath + fileName);
         Files.write(path, file.getBytes());
 
-        log.info("文件上传成功: {}", path.toString());
+        log.info("文件上传成功: {}", path);
         return path.toString();
     }
 

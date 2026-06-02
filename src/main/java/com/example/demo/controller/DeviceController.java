@@ -101,26 +101,6 @@ public class DeviceController {
      *                 - name: 设备名称（可选，模糊查询）
      *                 - parentCode: 父设备编码（可选，指定后返回该父设备及其所有子孙节点的树）
      * @return 设备树形结构列表
-     *
-     * 请求示例1 - 查询全部设备树：
-     * {
-     * }
-     *
-     * 请求示例2 - 按名称搜索：
-     * {
-     *   "name": "发动机"
-     * }
-     *
-     * 请求示例3 - 按父设备查询：
-     * {
-     *   "parentCode": "engine"
-     * }
-     *
-     * 请求示例4 - 组合查询：
-     * {
-     *   "name": "柴油",
-     *   "parentCode": "engine"
-     * }
      */
     @PostMapping("/tree")
     public Result<List<DeviceTreeDTO>> getDeviceTree(@RequestBody DeviceQueryDTO queryDTO) {

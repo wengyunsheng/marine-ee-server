@@ -35,10 +35,9 @@ public class TestCycleServiceImpl extends ServiceImpl<TestCycleMapper, TestCycle
                         LinkedHashMap::new,
                         Collectors.toList()));
 
-        return groupedByCode.entrySet().stream()
-                .map(entry -> {
+        return groupedByCode.values().stream()
+                .map(cycles -> {
                     TestCycleDetailDTO detail = new TestCycleDetailDTO();
-                    List<TestCycle> cycles = entry.getValue();
                     TestCycle first = cycles.get(0);
 
                     detail.setCycleCode(first.getCycleCode());

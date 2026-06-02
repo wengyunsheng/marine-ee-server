@@ -15,9 +15,6 @@ public class DeviceOptionDTO implements Serializable {
 
     private String name;
 
-    public DeviceOptionDTO() {
-    }
-
     public DeviceOptionDTO(Long id, String code, String name) {
         this.id = id;
         this.code = code;

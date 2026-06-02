@@ -14,7 +14,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -69,7 +68,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             }
         }
 
-        return buildTree(filteredDevices, null);
+        return buildTree(filteredDevices);
     }
 
     @Override
@@ -105,7 +104,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .collect(Collectors.toList());
     }
 
-    private List<DeviceTreeDTO> buildTree(List<Device> devices, String parentCode) {
+    private List<DeviceTreeDTO> buildTree(List<Device> devices) {
         List<DeviceTreeDTO> treeList = new ArrayList<>();
 
         for (Device device : devices) {
@@ -125,14 +124,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             }
         }
 
-        if (parentCode == null || parentCode.trim().isEmpty()) {
-            return treeList.stream()
-                    .filter(d -> d.getParentCode() == null)
-                    .collect(Collectors.toList());
-        } else {
-            return treeList.stream()
-                    .filter(d -> d.getCode().equals(parentCode))
-                    .collect(Collectors.toList());
-        }
+        return treeList.stream()
+                .filter(d -> d.getParentCode() == null)
+                .collect(Collectors.toList());
     }
 }
