@@ -3,6 +3,7 @@ package com.example.demo.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.Device;
+import com.example.demo.entity.DeviceOptionDTO;
 import com.example.demo.entity.DeviceQueryDTO;
 import com.example.demo.entity.DeviceTreeDTO;
 import com.example.demo.mapper.DeviceMapper;
@@ -69,6 +70,14 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         }
 
         return buildTree(filteredDevices, null);
+    }
+
+    @Override
+    public List<DeviceOptionDTO> getParentDeviceOptions() {
+        List<Device> parentDevices = baseMapper.selectParentDevices();
+        return parentDevices.stream()
+                .map(device -> new DeviceOptionDTO(device.getId(), device.getCode(), device.getName()))
+                .collect(Collectors.toList());
     }
 
     private List<DeviceTreeDTO> buildTreeWithParent(List<Device> devices, Device parentDevice) {

@@ -8,28 +8,34 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Data
-@TableName("device")
-public class Device implements Serializable {
+@TableName("file_info")
+public class FileInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    @TableField("code")
-    private String code;
+    @TableField("file_name")
+    private String fileName;
 
-    @TableField("parent_code")
-    private String parentCode;
+    @TableField("file_path")
+    private String filePath;
 
-    @TableField("name")
-    private String name;
+    @TableField("file_type")
+    private String fileType;
 
-    @TableField("model_file_id")
-    private Long modelFileId;
+    @TableField("file_size")
+    private Long fileSize;
 
-    @TableField("sort")
-    private Integer sort;
+    @TableField("file_url")
+    private String fileUrl;
+
+    @TableField("business_type")
+    private String businessType;
+
+    @TableField("business_id")
+    private Long businessId;
 
     @TableField("is_deleted")
     private Integer isDeleted;
@@ -41,8 +47,4 @@ public class Device implements Serializable {
     @TableField("update_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
-
-    @TableField("delete_time")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime deleteTime;
 }

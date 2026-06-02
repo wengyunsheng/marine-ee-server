@@ -20,6 +20,8 @@ public class DeviceTreeDTO implements Serializable {
 
     private String name;
 
+    private Long modelFileId;
+
     private Integer sort;
 
     private Integer isDeleted;
@@ -45,6 +47,7 @@ public class DeviceTreeDTO implements Serializable {
                 ", code='" + code + '\'' +
                 ", parentCode='" + parentCode + '\'' +
                 ", name='" + name + '\'' +
+                ", modelFileId=" + modelFileId +
                 ", sort=" + sort +
                 ", isDeleted=" + isDeleted +
                 ", createTime=" + createTime +

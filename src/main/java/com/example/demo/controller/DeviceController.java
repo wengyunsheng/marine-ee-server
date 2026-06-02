@@ -1,9 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.Device;
-import com.example.demo.entity.DeviceQueryDTO;
-import com.example.demo.entity.DeviceTreeDTO;
-import com.example.demo.entity.Result;
+import com.example.demo.entity.*;
 import com.example.demo.service.DeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
@@ -82,6 +79,18 @@ public class DeviceController {
         } catch (Exception e) {
             return Result.error("更新失败: " + e.getMessage());
         }
+    }
+
+    /**
+     * 获取所有父设备列表（用于下拉选择）
+     * 返回简化的设备信息（id, code, name）
+     *
+     * @return 父设备选项列表
+     */
+    @GetMapping("/parent-options")
+    public Result<List<DeviceOptionDTO>> getParentDeviceOptions() {
+        List<DeviceOptionDTO> options = deviceService.getParentDeviceOptions();
+        return Result.success(options, options.size());
     }
 
     /**
