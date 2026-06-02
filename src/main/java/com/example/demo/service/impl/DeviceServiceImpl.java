@@ -11,6 +11,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -29,8 +30,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         if (device.getSort() == null) {
             device.setSort(0);
         }
-        device.setCreateTime(new Date());
-        device.setUpdateTime(new Date());
+        device.setCreateTime(LocalDateTime.now());
+        device.setUpdateTime(LocalDateTime.now());
         return super.save(device);
     }
 

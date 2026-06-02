@@ -1,10 +1,11 @@
 package com.example.demo.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @TableName("device")
@@ -31,29 +32,14 @@ public class Device implements Serializable {
     private Integer isDeleted;
 
     @TableField("create_time")
-    private Date createTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime createTime;
 
     @TableField("update_time")
-    private Date updateTime;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime updateTime;
 
     @TableField("delete_time")
-    private Date deleteTime;
-
-    public Device() {
-    }
-
-    @Override
-    public String toString() {
-        return "Device{" +
-                "id=" + id +
-                ", code='" + code + '\'' +
-                ", parentCode='" + parentCode + '\'' +
-                ", name='" + name + '\'' +
-                ", sort=" + sort +
-                ", isDeleted=" + isDeleted +
-                ", createTime=" + createTime +
-                ", updateTime=" + updateTime +
-                ", deleteTime=" + deleteTime +
-                '}';
-    }
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime deleteTime;
 }
