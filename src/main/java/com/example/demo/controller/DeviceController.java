@@ -1,6 +1,10 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.*;
+import com.example.demo.entity.dto.DeviceOptionDTO;
+import com.example.demo.entity.dto.DeviceQueryDTO;
+import com.example.demo.entity.dto.DeviceTreeDTO;
+import com.example.demo.entity.dto.Result;
 import com.example.demo.service.DeviceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;

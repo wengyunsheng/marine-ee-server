@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.FileUploadResult;
-import com.example.demo.entity.Result;
+import com.example.demo.entity.dto.FileUploadResult;
+import com.example.demo.entity.dto.Result;
 import com.example.demo.service.FileUploadService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;

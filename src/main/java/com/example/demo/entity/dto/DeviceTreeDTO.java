@@ -1,4 +1,4 @@
-package com.example.demo.entity;
+package com.example.demo.entity.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;

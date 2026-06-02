@@ -2,7 +2,7 @@ package com.example.demo.service.impl;
 
 import com.example.demo.entity.Device;
 import com.example.demo.entity.FileInfo;
-import com.example.demo.entity.FileUploadResult;
+import com.example.demo.entity.dto.FileUploadResult;
 import com.example.demo.mapper.DeviceMapper;
 import com.example.demo.service.FileInfoService;
 import com.example.demo.service.FileUploadService;

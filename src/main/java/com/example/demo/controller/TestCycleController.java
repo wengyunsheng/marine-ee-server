@@ -1,6 +1,8 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.*;
+import com.example.demo.entity.dto.Result;
+import com.example.demo.entity.dto.TestCycleBatchUpdateDTO;
+import com.example.demo.entity.dto.TestCycleDetailDTO;
 import com.example.demo.service.TestCycleService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
