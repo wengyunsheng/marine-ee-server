@@ -1,4 +1,26 @@
 package com.example.demo.entity;
 
-public class DeviceQueryDTO {
+import lombok.Data;
+
+import java.io.Serializable;
+
+@Data
+public class DeviceQueryDTO implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    private String name;
+
+    private String parentCode;
+
+    public DeviceQueryDTO() {
+    }
+
+    @Override
+    public String toString() {
+        return "DeviceQueryDTO{" +
+                "name='" + name + '\'' +
+                ", parentCode='" + parentCode + '\'' +
+                '}';
+    }
 }

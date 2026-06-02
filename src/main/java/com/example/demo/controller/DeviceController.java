@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.Device;
+import com.example.demo.entity.DeviceQueryDTO;
 import com.example.demo.entity.DeviceTreeDTO;
 import com.example.demo.entity.Result;
 import com.example.demo.service.DeviceService;
@@ -9,6 +10,13 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 设备管理控制器
+ * 提供设备的增删改查、树形结构查询等功能
+ *
+ * @author admin
+ * @since 2026-06-02
+ */
 @RestController
 @RequestMapping("/api/devices")
 public class DeviceController {
@@ -16,6 +24,12 @@ public class DeviceController {
     @Autowired
     private DeviceService deviceService;
 
+    /**
+     * 新增设备
+     *
+     * @param device 设备信息
+     * @return 操作结果
+     */
     @PostMapping
     public Result<Device> addDevice(@RequestBody Device device) {
         try {
@@ -30,6 +44,12 @@ public class DeviceController {
         }
     }
 
+    /**
+     * 删除设备（物理删除）
+     *
+     * @param id 设备ID
+     * @return 操作结果
+     */
     @DeleteMapping("/{id}")
     public Result<Void> deleteDevice(@PathVariable Long id) {
         try {
@@ -44,6 +64,12 @@ public class DeviceController {
         }
     }
 
+    /**
+     * 更新设备信息
+     *
+     * @param device 设备信息
+     * @return 操作结果
+     */
     @PutMapping
     public Result<Device> updateDevice(@RequestBody Device device) {
         try {
@@ -58,67 +84,39 @@ public class DeviceController {
         }
     }
 
-    @GetMapping("/{id}")
-    public Result<Device> getDeviceById(@PathVariable Long id) {
-        Device device = deviceService.getById(id);
-        if (device != null) {
-            return Result.success(device);
-        } else {
-            return Result.notFound("设备不存在");
-        }
-    }
-
-    @GetMapping("/code/{code}")
-    public Result<Device> getDeviceByCode(@PathVariable String code) {
-        Device device = deviceService.getDeviceByCode(code);
-        if (device != null) {
-            return Result.success(device);
-        } else {
-            return Result.notFound("设备不存在");
-        }
-    }
-
-    @GetMapping
-    public Result<List<Device>> getAllDevices() {
-        List<Device> devices = deviceService.getAllDevices();
-        return Result.success(devices, devices.size());
-    }
-
-    @GetMapping("/parents")
-    public Result<List<Device>> getParentDevices() {
-        List<Device> devices = deviceService.getParentDevices();
-        return Result.success(devices, devices.size());
-    }
-
-    @GetMapping("/children/{parentCode}")
-    public Result<List<Device>> getChildDevices(@PathVariable String parentCode) {
-        List<Device> devices = deviceService.getDevicesByParentCode(parentCode);
-        return Result.success(devices, devices.size());
-    }
-
-    @PostMapping("/{id}/logic-delete")
-    public Result<Void> logicDelete(@PathVariable Long id) {
-        try {
-            int rows = deviceService.logicDelete(id);
-            if (rows > 0) {
-                return Result.successMessage("逻辑删除成功");
-            } else {
-                return Result.error("逻辑删除失败");
-            }
-        } catch (Exception e) {
-            return Result.error("逻辑删除失败: " + e.getMessage());
-        }
-    }
-
-    @GetMapping("/tree")
-    public Result<List<DeviceTreeDTO>> getDeviceTree() {
-        List<DeviceTreeDTO> tree = deviceService.getDeviceTree();
+    /**
+     * 获取设备树形结构
+     * 支持按设备名称模糊搜索和按父设备编码筛选
+     *
+     * @param queryDTO 查询条件
+     *                 - name: 设备名称（可选，模糊查询）
+     *                 - parentCode: 父设备编码（可选，指定后返回该父设备及其所有子孙节点的树）
+     * @return 设备树形结构列表
+     *
+     * 请求示例1 - 查询全部设备树：
+     * {
+     * }
+     *
+     * 请求示例2 - 按名称搜索：
+     * {
+     *   "name": "发动机"
+     * }
+     *
+     * 请求示例3 - 按父设备查询：
+     * {
+     *   "parentCode": "engine"
+     * }
+     *
+     * 请求示例4 - 组合查询：
+     * {
+     *   "name": "柴油",
+     *   "parentCode": "engine"
+     * }
+     */
+    @PostMapping("/tree")
+    public Result<List<DeviceTreeDTO>> getDeviceTree(@RequestBody DeviceQueryDTO queryDTO) {
+        List<DeviceTreeDTO> tree = deviceService.getDeviceTree(queryDTO);
         return Result.success(tree, tree.size());
     }
 
-    @GetMapping("/tree/{parentCode}")
-    public Result<List<DeviceTreeDTO>> getDeviceTreeByParentCode(@PathVariable String parentCode) {
-        List<DeviceTreeDTO> tree = deviceService.getDeviceTreeByParentCode(parentCode);
-        return Result.success(tree, tree.size());
-    }
 }

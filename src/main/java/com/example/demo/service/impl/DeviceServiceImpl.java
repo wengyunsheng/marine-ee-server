@@ -3,6 +3,7 @@ package com.example.demo.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.Device;
+import com.example.demo.entity.DeviceQueryDTO;
 import com.example.demo.entity.DeviceTreeDTO;
 import com.example.demo.mapper.DeviceMapper;
 import com.example.demo.service.DeviceService;
@@ -34,13 +35,6 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     }
 
     @Override
-    public Device getDeviceByCode(String code) {
-        QueryWrapper<Device> wrapper = new QueryWrapper<>();
-        wrapper.eq("code", code).eq("is_deleted", 0);
-        return baseMapper.selectOne(wrapper);
-    }
-
-    @Override
     public List<Device> getAllDevices() {
         QueryWrapper<Device> wrapper = new QueryWrapper<>();
         wrapper.eq("is_deleted", 0).orderByAsc("sort", "id");
@@ -48,44 +42,57 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     }
 
     @Override
-    public List<Device> getParentDevices() {
-        return baseMapper.selectParentDevices();
-    }
-
-    @Override
-    public List<Device> getChildDevices(String parentCode) {
-        return baseMapper.selectChildDevices(parentCode);
-    }
-
-    @Override
-    public List<Device> getDevicesByParentCode(String parentCode) {
-        return baseMapper.selectByParentCode(parentCode);
-    }
-
-    @Override
-    public int countByParentCode(String parentCode) {
-        return baseMapper.countByParentCode(parentCode);
-    }
-
-    @Override
-    @Transactional
-    public int logicDelete(Long id) {
-        return baseMapper.logicDeleteById(id);
-    }
-
-    @Override
-    public List<DeviceTreeDTO> getDeviceTree() {
+    public List<DeviceTreeDTO> getDeviceTree(DeviceQueryDTO queryDTO) {
         QueryWrapper<Device> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0).orderByAsc("sort", "id");
-        List<Device> allDevices = baseMapper.selectList(wrapper);
+        wrapper.eq("is_deleted", 0);
 
-        return buildTree(allDevices, null);
+        boolean hasNameFilter = queryDTO != null && queryDTO.getName() != null && !queryDTO.getName().trim().isEmpty();
+        boolean hasParentFilter = queryDTO != null && queryDTO.getParentCode() != null && !queryDTO.getParentCode().trim().isEmpty();
+
+        if (hasNameFilter) {
+            wrapper.like("name", queryDTO.getName());
+        }
+
+        wrapper.orderByAsc("sort", "id");
+        List<Device> filteredDevices = baseMapper.selectList(wrapper);
+
+        if (hasParentFilter) {
+            Device parentDevice = baseMapper.selectByCode(queryDTO.getParentCode());
+            if (parentDevice != null && !hasNameFilter) {
+                List<Device> allDevices = getAllDevices();
+                return buildTreeWithParent(allDevices, parentDevice);
+            } else if (parentDevice != null) {
+                filteredDevices.add(0, parentDevice);
+                return buildTreeWithParent(filteredDevices, parentDevice);
+            }
+        }
+
+        return buildTree(filteredDevices, null);
     }
 
-    @Override
-    public List<DeviceTreeDTO> getDeviceTreeByParentCode(String parentCode) {
-        List<Device> children = baseMapper.selectByParentCode(parentCode);
-        return buildTree(children, parentCode);
+    private List<DeviceTreeDTO> buildTreeWithParent(List<Device> devices, Device parentDevice) {
+        List<DeviceTreeDTO> treeList = new ArrayList<>();
+
+        for (Device device : devices) {
+            DeviceTreeDTO dto = new DeviceTreeDTO();
+            BeanUtils.copyProperties(device, dto);
+            treeList.add(dto);
+        }
+
+        Map<String, List<DeviceTreeDTO>> parentMap = treeList.stream()
+                .filter(d -> d.getParentCode() != null)
+                .collect(Collectors.groupingBy(DeviceTreeDTO::getParentCode));
+
+        for (DeviceTreeDTO dto : treeList) {
+            List<DeviceTreeDTO> children = parentMap.get(dto.getCode());
+            if (children != null) {
+                dto.setChildren(children);
+            }
+        }
+
+        return treeList.stream()
+                .filter(d -> d.getCode().equals(parentDevice.getCode()))
+                .collect(Collectors.toList());
     }
 
     private List<DeviceTreeDTO> buildTree(List<Device> devices, String parentCode) {
@@ -108,12 +115,14 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             }
         }
 
-        if (parentCode == null) {
+        if (parentCode == null || parentCode.trim().isEmpty()) {
             return treeList.stream()
                     .filter(d -> d.getParentCode() == null)
                     .collect(Collectors.toList());
         } else {
-            return treeList;
+            return treeList.stream()
+                    .filter(d -> d.getCode().equals(parentCode))
+                    .collect(Collectors.toList());
         }
     }
 }

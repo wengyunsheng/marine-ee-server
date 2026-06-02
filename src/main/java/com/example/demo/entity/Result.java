@@ -1,7 +1,10 @@
 package com.example.demo.entity;
 
+import lombok.Data;
+
 import java.io.Serializable;
 
+@Data
 public class Result<T> implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -68,38 +71,6 @@ public class Result<T> implements Serializable {
 
     public static <T> Result<T> notFound(String message) {
         return new Result<>(404, message, null);
-    }
-
-    public Integer getCode() {
-        return code;
-    }
-
-    public void setCode(Integer code) {
-        this.code = code;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-    public T getData() {
-        return data;
-    }
-
-    public void setData(T data) {
-        this.data = data;
-    }
-
-    public Integer getTotal() {
-        return total;
-    }
-
-    public void setTotal(Integer total) {
-        this.total = total;
     }
 
     @Override
