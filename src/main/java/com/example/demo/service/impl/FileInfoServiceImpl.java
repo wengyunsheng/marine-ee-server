@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.FileInfo;
 import com.example.demo.mapper.FileInfoMapper;
@@ -13,10 +13,10 @@ public class FileInfoServiceImpl extends ServiceImpl<FileInfoMapper, FileInfo> i
 
     @Override
     public FileInfo getByBusinessId(String businessType, Long businessId) {
-        QueryWrapper<FileInfo> wrapper = new QueryWrapper<>();
-        wrapper.eq("business_type", businessType)
-                .eq("business_id", businessId)
-                .eq("is_deleted", 0);
+        LambdaQueryWrapper<FileInfo> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FileInfo::getBusinessType, businessType)
+                .eq(FileInfo::getBusinessId, businessId)
+                .eq(FileInfo::getIsDeleted, 0);
         return baseMapper.selectOne(wrapper);
     }
 

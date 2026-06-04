@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.SteamTurbineEfficiency;
 import com.example.demo.mapper.SteamTurbineEfficiencyMapper;
@@ -14,9 +14,10 @@ public class SteamTurbineEfficiencyServiceImpl extends ServiceImpl<SteamTurbineE
 
     @Override
     public List<SteamTurbineEfficiency> getList() {
-        QueryWrapper<SteamTurbineEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0)
-                .orderByAsc("sort");
+        LambdaQueryWrapper<SteamTurbineEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SteamTurbineEfficiency::getIsDeleted, 0)
+                .orderByAsc(SteamTurbineEfficiency::getSteamPressureMin, SteamTurbineEfficiency::getSteamPressureMax,
+                        SteamTurbineEfficiency::getSteamType, SteamTurbineEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

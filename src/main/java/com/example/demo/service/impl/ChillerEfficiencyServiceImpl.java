@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.ChillerEfficiency;
 import com.example.demo.mapper.ChillerEfficiencyMapper;
@@ -14,9 +14,9 @@ public class ChillerEfficiencyServiceImpl extends ServiceImpl<ChillerEfficiencyM
 
     @Override
     public List<ChillerEfficiency> getList() {
-        QueryWrapper<ChillerEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0)
-                .orderByAsc("sort");
+        LambdaQueryWrapper<ChillerEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ChillerEfficiency::getIsDeleted, 0)
+                .orderByAsc(ChillerEfficiency::getEvaluationType, ChillerEfficiency::getCoolingCapacityMin, ChillerEfficiency::getCoolingCapacityMax, ChillerEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

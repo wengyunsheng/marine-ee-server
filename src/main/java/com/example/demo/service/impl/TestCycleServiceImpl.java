@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.TestCycle;
 import com.example.demo.entity.dto.TestCycleBatchUpdateDTO;
@@ -24,9 +24,9 @@ public class TestCycleServiceImpl extends ServiceImpl<TestCycleMapper, TestCycle
 
     @Override
     public List<TestCycleDetailDTO> getAllCycleDetails() {
-        QueryWrapper<TestCycle> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0)
-                .orderByAsc("cycle_code", "condition_no", "sort");
+        LambdaQueryWrapper<TestCycle> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(TestCycle::getIsDeleted, 0)
+                .orderByAsc(TestCycle::getCycleCode, TestCycle::getConditionNo);
 
         List<TestCycle> allCycles = baseMapper.selectList(wrapper);
 
@@ -42,7 +42,6 @@ public class TestCycleServiceImpl extends ServiceImpl<TestCycleMapper, TestCycle
 
                     detail.setCycleCode(first.getCycleCode());
                     detail.setCycleName(first.getCycleName());
-                    detail.setDeviceType(first.getDeviceType());
 
                     List<TestCycleDetailDTO.ConditionDTO> conditions = cycles.stream()
                             .map(cycle -> {

@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.WasteHeatOrganicRankineEfficiency;
 import com.example.demo.mapper.WasteHeatOrganicRankineEfficiencyMapper;
@@ -14,9 +14,11 @@ public class WasteHeatOrganicRankineEfficiencyServiceImpl extends ServiceImpl<Wa
 
     @Override
     public List<WasteHeatOrganicRankineEfficiency> getList() {
-        QueryWrapper<WasteHeatOrganicRankineEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0)
-                .orderByAsc("sort");
+        LambdaQueryWrapper<WasteHeatOrganicRankineEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WasteHeatOrganicRankineEfficiency::getIsDeleted, 0)
+                .orderByAsc(WasteHeatOrganicRankineEfficiency::getHeatSourceTempMin, WasteHeatOrganicRankineEfficiency::getHeatSourceTempMax,
+                        WasteHeatOrganicRankineEfficiency::getPowerOutputMin, WasteHeatOrganicRankineEfficiency::getPowerOutputMin,
+                        WasteHeatOrganicRankineEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

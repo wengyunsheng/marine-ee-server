@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.EngineEfficiency;
 import com.example.demo.mapper.EngineEfficiencyMapper;
@@ -14,14 +14,14 @@ public class EngineEfficiencyServiceImpl extends ServiceImpl<EngineEfficiencyMap
 
     @Override
     public List<EngineEfficiency> getList(String engineType) {
-        QueryWrapper<EngineEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0);
+        LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(EngineEfficiency::getIsDeleted, 0);
 
         if (engineType != null && !engineType.trim().isEmpty()) {
-            wrapper.eq("engine_type", engineType);
+            wrapper.eq(EngineEfficiency::getEngineType, engineType);
         }
 
-        wrapper.orderByAsc("emission_level", "power_range_min", "efficiency_level", "sort");
+        wrapper.orderByAsc(EngineEfficiency::getEmissionLevel, EngineEfficiency::getPowerRangeMin, EngineEfficiency::getPowerRangeMax, EngineEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

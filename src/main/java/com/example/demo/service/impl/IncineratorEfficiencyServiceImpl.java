@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.IncineratorEfficiency;
 import com.example.demo.mapper.IncineratorEfficiencyMapper;
@@ -14,14 +14,14 @@ public class IncineratorEfficiencyServiceImpl extends ServiceImpl<IncineratorEff
 
     @Override
     public List<IncineratorEfficiency> getList(String incineratorType) {
-        QueryWrapper<IncineratorEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0);
+        LambdaQueryWrapper<IncineratorEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(IncineratorEfficiency::getIsDeleted, 0);
 
         if (incineratorType != null && !incineratorType.trim().isEmpty()) {
-            wrapper.eq("incinerator_type", incineratorType);
+            wrapper.eq(IncineratorEfficiency::getIncineratorType, incineratorType);
         }
 
-        wrapper.orderByAsc("sort");
+        wrapper.orderByAsc(IncineratorEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

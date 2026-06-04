@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.DiscSeparatorEfficiency;
 import com.example.demo.mapper.DiscSeparatorEfficiencyMapper;
@@ -14,9 +14,9 @@ public class DiscSeparatorEfficiencyServiceImpl extends ServiceImpl<DiscSeparato
 
     @Override
     public List<DiscSeparatorEfficiency> getList() {
-        QueryWrapper<DiscSeparatorEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0)
-                .orderByAsc("sort");
+        LambdaQueryWrapper<DiscSeparatorEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DiscSeparatorEfficiency::getIsDeleted, 0)
+                .orderByAsc(DiscSeparatorEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

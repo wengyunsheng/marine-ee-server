@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.AhuEfficiency;
 import com.example.demo.mapper.AhuEfficiencyMapper;
@@ -14,9 +14,9 @@ public class AhuEfficiencyServiceImpl extends ServiceImpl<AhuEfficiencyMapper, A
 
     @Override
     public List<AhuEfficiency> getList() {
-        QueryWrapper<AhuEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0)
-                .orderByAsc("air_flow_min", "static_pressure", "efficiency_level", "sort");
+        LambdaQueryWrapper<AhuEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AhuEfficiency::getIsDeleted, 0)
+                .orderByAsc(AhuEfficiency::getAirFlowMin, AhuEfficiency::getAirFlowMax, AhuEfficiency::getStaticPressure, AhuEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

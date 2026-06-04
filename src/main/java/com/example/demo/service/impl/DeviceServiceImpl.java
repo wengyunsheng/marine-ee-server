@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.Device;
 import com.example.demo.entity.dto.DeviceOptionDTO;
@@ -37,24 +37,25 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     @Override
     public List<Device> getAllDevices() {
-        QueryWrapper<Device> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0).orderByAsc("sort", "id");
+        LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Device::getIsDeleted, 0)
+                .orderByAsc(Device::getSort, Device::getId);
         return baseMapper.selectList(wrapper);
     }
 
     @Override
     public List<DeviceTreeDTO> getDeviceTree(DeviceQueryDTO queryDTO) {
-        QueryWrapper<Device> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0);
+        LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Device::getIsDeleted, 0);
 
         boolean hasNameFilter = queryDTO != null && queryDTO.getName() != null && !queryDTO.getName().trim().isEmpty();
         boolean hasParentFilter = queryDTO != null && queryDTO.getParentCode() != null && !queryDTO.getParentCode().trim().isEmpty();
 
         if (hasNameFilter) {
-            wrapper.like("name", queryDTO.getName());
+            wrapper.like(Device::getName, queryDTO.getName());
         }
 
-        wrapper.orderByAsc("sort", "id");
+        wrapper.orderByAsc(Device::getSort, Device::getId);
         List<Device> filteredDevices = baseMapper.selectList(wrapper);
 
         if (hasParentFilter) {

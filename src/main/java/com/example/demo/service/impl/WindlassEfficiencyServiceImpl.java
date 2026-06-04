@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.WindlassEfficiency;
 import com.example.demo.mapper.WindlassEfficiencyMapper;
@@ -14,14 +14,14 @@ public class WindlassEfficiencyServiceImpl extends ServiceImpl<WindlassEfficienc
 
     @Override
     public List<WindlassEfficiency> getList(String windlassType) {
-        QueryWrapper<WindlassEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0);
+        LambdaQueryWrapper<WindlassEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WindlassEfficiency::getIsDeleted, 0);
 
         if (windlassType != null && !windlassType.trim().isEmpty()) {
-            wrapper.eq("windlass_type", windlassType);
+            wrapper.eq(WindlassEfficiency::getWindlassType, windlassType);
         }
 
-        wrapper.orderByAsc("sort");
+        wrapper.orderByAsc(WindlassEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }

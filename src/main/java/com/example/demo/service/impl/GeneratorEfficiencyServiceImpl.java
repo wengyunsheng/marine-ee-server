@@ -1,6 +1,6 @@
 package com.example.demo.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.GeneratorEfficiency;
 import com.example.demo.mapper.GeneratorEfficiencyMapper;
@@ -14,14 +14,15 @@ public class GeneratorEfficiencyServiceImpl extends ServiceImpl<GeneratorEfficie
 
     @Override
     public List<GeneratorEfficiency> getList(String generatorType) {
-        QueryWrapper<GeneratorEfficiency> wrapper = new QueryWrapper<>();
-        wrapper.eq("is_deleted", 0);
+        LambdaQueryWrapper<GeneratorEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(GeneratorEfficiency::getIsDeleted, 0);
 
         if (generatorType != null && !generatorType.trim().isEmpty()) {
-            wrapper.eq("generator_type", generatorType);
+            wrapper.eq(GeneratorEfficiency::getGeneratorType, generatorType);
         }
 
-        wrapper.orderByAsc("rated_capacity", "rotor_poles", "efficiency_level", "sort");
+        wrapper.orderByAsc(GeneratorEfficiency::getRatedCapacity, GeneratorEfficiency::getRatedPower,
+                GeneratorEfficiency::getRotorPoles, GeneratorEfficiency::getEfficiencyLevel);
         return baseMapper.selectList(wrapper);
     }
 }
