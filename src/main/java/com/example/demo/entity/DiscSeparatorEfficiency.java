@@ -29,9 +29,6 @@ public class DiscSeparatorEfficiency implements Serializable {
     @TableField("description")
     private String description;
 
-    @TableField("sort")
-    private Integer sort;
-
     @TableField("create_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
@@ -39,12 +36,6 @@ public class DiscSeparatorEfficiency implements Serializable {
     @TableField("update_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
-
-    @TableField("create_by")
-    private String createBy;
-
-    @TableField("update_by")
-    private String updateBy;
 
     @TableField("is_deleted")
     private Integer isDeleted;

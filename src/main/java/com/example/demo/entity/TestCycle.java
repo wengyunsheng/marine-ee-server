@@ -23,9 +23,6 @@ public class TestCycle implements Serializable {
     @TableField("cycle_name")
     private String cycleName;
 
-    @TableField("device_type")
-    private String deviceType;
-
     @TableField("condition_no")
     private Integer conditionNo;
 
@@ -37,9 +34,6 @@ public class TestCycle implements Serializable {
 
     @TableField("weight_coefficient")
     private BigDecimal weightCoefficient;
-
-    @TableField("sort")
-    private Integer sort;
 
     @TableField("is_deleted")
     private Integer isDeleted;

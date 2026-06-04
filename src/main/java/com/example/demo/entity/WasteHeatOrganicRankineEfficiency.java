@@ -32,17 +32,11 @@ public class WasteHeatOrganicRankineEfficiency implements Serializable {
     @TableField("efficiency_level")
     private Integer efficiencyLevel;
 
-    @TableField("base_value_expression")
-    private String baseValueExpression;
+    @TableField("base_value")
+    private BigDecimal baseValue;
 
-    @TableField("base_value_percent")
-    private BigDecimal baseValuePercent;
-
-    @TableField("carnot_coefficient")
-    private String carnotCoefficient;
-
-    @TableField("sort")
-    private Integer sort;
+    @TableField("unit")
+    private String unit;
 
     @TableField("create_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
@@ -51,12 +45,6 @@ public class WasteHeatOrganicRankineEfficiency implements Serializable {
     @TableField("update_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime updateTime;
-
-    @TableField("create_by")
-    private String createBy;
-
-    @TableField("update_by")
-    private String updateBy;
 
     @TableField("is_deleted")
     private Integer isDeleted;

@@ -15,8 +15,6 @@ public class TestCycleDetailDTO implements Serializable {
 
     private String cycleName;
 
-    private String deviceType;
-
     private List<ConditionDTO> conditions;
 
     @Data
