@@ -46,30 +46,77 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     @Override
     public List<DeviceTreeDTO> getDeviceTree(DeviceQueryDTO queryDTO) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Device::getIsDeleted, 0);
+        wrapper.eq(Device::getIsDeleted, 0)
+                .orderByAsc(Device::getSort, Device::getId);
 
         boolean hasNameFilter = queryDTO != null && queryDTO.getName() != null && !queryDTO.getName().trim().isEmpty();
         boolean hasParentFilter = queryDTO != null && queryDTO.getParentCode() != null && !queryDTO.getParentCode().trim().isEmpty();
 
-        if (hasNameFilter) {
-            wrapper.like(Device::getName, queryDTO.getName());
-        }
-
-        wrapper.orderByAsc(Device::getSort, Device::getId);
-        List<Device> filteredDevices = baseMapper.selectList(wrapper);
-
         if (hasParentFilter) {
-            Device parentDevice = baseMapper.selectByCode(queryDTO.getParentCode());
-            if (parentDevice != null && !hasNameFilter) {
-                List<Device> allDevices = getAllDevices();
-                return buildTreeWithParent(allDevices, parentDevice);
-            } else if (parentDevice != null) {
-                filteredDevices.add(0, parentDevice);
-                return buildTreeWithParent(filteredDevices, parentDevice);
+            Device parentDevice = baseMapper.selectOne(new LambdaQueryWrapper<Device>()
+                    .eq(Device::getIsDeleted, 0)
+                    .eq(Device::getCode, queryDTO.getParentCode()));
+
+            if (parentDevice == null) {
+                return new ArrayList<>();
             }
+
+            LambdaQueryWrapper<Device> childWrapper = new LambdaQueryWrapper<Device>()
+                    .eq(Device::getIsDeleted, 0)
+                    .eq(Device::getParentCode, parentDevice.getCode());
+
+            if (hasNameFilter) {
+                childWrapper.like(Device::getName, queryDTO.getName());
+            }
+
+            childWrapper.orderByAsc(Device::getSort, Device::getId);
+
+            List<Device> childDevices = baseMapper.selectList(childWrapper);
+
+            if (childDevices.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            List<Device> allDevices = new ArrayList<>();
+            allDevices.add(parentDevice);
+            allDevices.addAll(childDevices);
+
+            return buildTreeWithParent(allDevices, parentDevice);
         }
 
-        return buildTree(filteredDevices);
+        if (hasNameFilter) {
+            List<Device> matchedDevices = baseMapper.selectList(wrapper.clone().like(Device::getName, queryDTO.getName()));
+
+            if (matchedDevices.isEmpty()) {
+                return new ArrayList<>();
+            }
+
+            List<String> parentCodes = new ArrayList<>();
+            for (Device device : matchedDevices) {
+                if (device.getParentCode() != null && !parentCodes.contains(device.getParentCode())) {
+                    parentCodes.add(device.getParentCode());
+                }
+            }
+
+            List<Device> allDevices = new ArrayList<>(matchedDevices);
+
+            if (!parentCodes.isEmpty()) {
+                List<Device> parentDevices = baseMapper.selectList(new LambdaQueryWrapper<Device>()
+                        .eq(Device::getIsDeleted, 0)
+                        .in(Device::getCode, parentCodes));
+
+                for (Device parentDevice : parentDevices) {
+                    if (allDevices.stream().noneMatch(d -> d.getId().equals(parentDevice.getId()))) {
+                        allDevices.add(parentDevice);
+                    }
+                }
+            }
+
+            return buildTreeWithFilter(allDevices, queryDTO.getName());
+        }
+
+        List<Device> allDevices = baseMapper.selectList(wrapper);
+        return buildTree(allDevices);
     }
 
     @Override
@@ -103,6 +150,57 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         return treeList.stream()
                 .filter(d -> d.getCode().equals(parentDevice.getCode()))
                 .collect(Collectors.toList());
+    }
+
+    private List<DeviceTreeDTO> buildTreeWithFilter(List<Device> devices, String filterName) {
+        List<DeviceTreeDTO> treeList = new ArrayList<>();
+
+        for (Device device : devices) {
+            DeviceTreeDTO dto = new DeviceTreeDTO();
+            BeanUtils.copyProperties(device, dto);
+            treeList.add(dto);
+        }
+
+        Map<String, List<DeviceTreeDTO>> parentMap = treeList.stream()
+                .filter(d -> d.getParentCode() != null)
+                .collect(Collectors.groupingBy(DeviceTreeDTO::getParentCode));
+
+        for (DeviceTreeDTO dto : treeList) {
+            List<DeviceTreeDTO> children = parentMap.get(dto.getCode());
+            if (children != null) {
+                dto.setChildren(children);
+            }
+        }
+
+        Map<String, DeviceTreeDTO> deviceMap = treeList.stream()
+                .collect(Collectors.toMap(DeviceTreeDTO::getCode, d -> d));
+
+        return treeList.stream()
+                .filter(d -> {
+                    if (d.getParentCode() == null) {
+                        if (d.getName().contains(filterName)) {
+                            return true;
+                        }
+                        return hasMatchingChild(d, filterName, deviceMap);
+                    }
+                    return false;
+                })
+                .collect(Collectors.toList());
+    }
+
+    private boolean hasMatchingChild(DeviceTreeDTO node, String filterName, Map<String, DeviceTreeDTO> deviceMap) {
+        if (node.getChildren() == null || node.getChildren().isEmpty()) {
+            return false;
+        }
+        for (DeviceTreeDTO child : node.getChildren()) {
+            if (child.getName().contains(filterName)) {
+                return true;
+            }
+            if (hasMatchingChild(child, filterName, deviceMap)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<DeviceTreeDTO> buildTree(List<Device> devices) {
