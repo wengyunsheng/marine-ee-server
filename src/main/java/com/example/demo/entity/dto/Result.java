@@ -33,6 +33,9 @@ public class Result<T> implements Serializable {
     public static <T> Result<T> success(T data, Integer total) {
         return new Result<>(200, "操作成功", data, total);
     }
+    public static <T> Result<T> success(T data ) {
+        return new Result<>(200, "操作成功", data );
+    }
 
     public static <T> Result<T> success(String message, T data) {
         return new Result<>(200, message, data);
