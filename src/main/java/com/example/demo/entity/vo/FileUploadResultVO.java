@@ -1,11 +1,11 @@
-package com.example.demo.entity.dto;
+package com.example.demo.entity.vo;
 
 import lombok.Data;
 
 import java.io.Serializable;
 
 @Data
-public class FileUploadResult implements Serializable {
+public class FileUploadResultVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -2,7 +2,7 @@ package com.example.demo.service.impl;
 
 import com.example.demo.entity.Device;
 import com.example.demo.entity.FileInfo;
-import com.example.demo.entity.dto.FileUploadResult;
+import com.example.demo.entity.vo.FileUploadResultVO;
 import com.example.demo.mapper.DeviceMapper;
 import com.example.demo.service.FileInfoService;
 import com.example.demo.service.FileUploadService;
@@ -33,7 +33,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     @Override
     @Transactional
-    public FileUploadResult upload3DModel(MultipartFile file, Long deviceId) {
+    public FileUploadResultVO upload3DModel(MultipartFile file, Long deviceId) {
         try {
             Device device = deviceMapper.selectById(deviceId);
             if (device == null) {
@@ -71,7 +71,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             device.setModelFileId(fileInfo.getId());
             deviceMapper.updateById(device);
 
-            FileUploadResult result = new FileUploadResult();
+            FileUploadResultVO result = new FileUploadResultVO();
             result.setFileId(fileInfo.getId());
             result.setFileName(fileName);
             result.setFilePath(filePath);

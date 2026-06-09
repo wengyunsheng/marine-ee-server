@@ -1,4 +1,4 @@
-package com.example.demo.entity.dto;
+package com.example.demo.entity.vo;
 
 import lombok.Data;
 
@@ -6,7 +6,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 
 @Data
-public class EvaluationResultDTO implements Serializable {
+public class EvaluationResultVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

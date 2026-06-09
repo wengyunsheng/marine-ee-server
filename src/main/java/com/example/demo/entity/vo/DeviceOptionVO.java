@@ -1,11 +1,14 @@
-package com.example.demo.entity.dto;
+package com.example.demo.entity.vo;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.io.Serializable;
 
+@AllArgsConstructor
 @Data
-public class DeviceOptionDTO implements Serializable {
+public class DeviceOptionVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -15,9 +18,4 @@ public class DeviceOptionDTO implements Serializable {
 
     private String name;
 
-    public DeviceOptionDTO(Long id, String code, String name) {
-        this.id = id;
-        this.code = code;
-        this.name = name;
-    }
 }

@@ -8,8 +8,5 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface FileInfoMapper extends BaseMapper<FileInfo> {
 
-    FileInfo selectByBusinessId(@Param("businessType") String businessType,
-                                @Param("businessId") Long businessId);
-
     int logicDeleteById(@Param("id") Long id);
 }

@@ -3,7 +3,7 @@ package com.example.demo.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.TestCycle;
-import com.example.demo.entity.dto.TestCycleDetailDTO;
+import com.example.demo.entity.vo.TestCycleDetailVO;
 import com.example.demo.mapper.TestCycleMapper;
 import com.example.demo.service.TestCycleService;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class TestCycleServiceImpl extends ServiceImpl<TestCycleMapper, TestCycle> implements TestCycleService {
 
     @Override
-    public List<TestCycleDetailDTO> getAllCycleDetails() {
+    public List<TestCycleDetailVO> getAllCycleDetails() {
         LambdaQueryWrapper<TestCycle> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(TestCycle::getIsDeleted, 0)
                 .orderByAsc(TestCycle::getCycleCode, TestCycle::getConditionNo);
@@ -33,15 +33,15 @@ public class TestCycleServiceImpl extends ServiceImpl<TestCycleMapper, TestCycle
 
         return groupedByCode.values().stream()
                 .map(cycles -> {
-                    TestCycleDetailDTO detail = new TestCycleDetailDTO();
+                    TestCycleDetailVO detail = new TestCycleDetailVO();
                     TestCycle first = cycles.get(0);
 
                     detail.setCycleCode(first.getCycleCode());
                     detail.setCycleName(first.getCycleName());
 
-                    List<TestCycleDetailDTO.ConditionDTO> conditions = cycles.stream()
+                    List<TestCycleDetailVO.ConditionDTO> conditions = cycles.stream()
                             .map(cycle -> {
-                                TestCycleDetailDTO.ConditionDTO condition = new TestCycleDetailDTO.ConditionDTO();
+                                TestCycleDetailVO.ConditionDTO condition = new TestCycleDetailVO.ConditionDTO();
                                 condition.setConditionNo(cycle.getConditionNo());
                                 condition.setEngineSpeed(cycle.getEngineSpeed());
                                 condition.setPowerMode(cycle.getPowerMode());

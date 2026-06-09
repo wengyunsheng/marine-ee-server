@@ -1,10 +1,10 @@
 package com.example.demo.service;
 
-import com.example.demo.entity.dto.FileUploadResult;
+import com.example.demo.entity.vo.FileUploadResultVO;
 import org.springframework.web.multipart.MultipartFile;
 
 public interface FileUploadService {
 
-    FileUploadResult upload3DModel(MultipartFile file, Long deviceId);
+    FileUploadResultVO upload3DModel(MultipartFile file, Long deviceId);
 
 }

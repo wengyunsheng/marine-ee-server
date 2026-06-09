@@ -3,9 +3,9 @@ package com.example.demo.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.Device;
-import com.example.demo.entity.dto.DeviceOptionDTO;
+import com.example.demo.entity.vo.DeviceOptionVO;
 import com.example.demo.entity.dto.DeviceQueryDTO;
-import com.example.demo.entity.dto.DeviceTreeDTO;
+import com.example.demo.entity.vo.DeviceTreeVO;
 import com.example.demo.mapper.DeviceMapper;
 import com.example.demo.service.DeviceService;
 import org.springframework.beans.BeanUtils;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements DeviceService {
 
     @Override
-    public List<DeviceTreeDTO> getDeviceTree(DeviceQueryDTO queryDTO) {
+    public List<DeviceTreeVO> getDeviceTree(DeviceQueryDTO queryDTO) {
         LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(Device::getIsDeleted, 0)
                 .orderByAsc(Device::getSort, Device::getId);
@@ -96,28 +96,28 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     }
 
     @Override
-    public List<DeviceOptionDTO> getParentDeviceOptions() {
+    public List<DeviceOptionVO> getParentDeviceOptions() {
         List<Device> parentDevices = baseMapper.selectParentDevices();
         return parentDevices.stream()
-                .map(device -> new DeviceOptionDTO(device.getId(), device.getCode(), device.getName()))
+                .map(device -> new DeviceOptionVO(device.getId(), device.getCode(), device.getName()))
                 .collect(Collectors.toList());
     }
 
-    private List<DeviceTreeDTO> buildTreeWithParent(List<Device> devices, Device parentDevice) {
-        List<DeviceTreeDTO> treeList = new ArrayList<>();
+    private List<DeviceTreeVO> buildTreeWithParent(List<Device> devices, Device parentDevice) {
+        List<DeviceTreeVO> treeList = new ArrayList<>();
 
         for (Device device : devices) {
-            DeviceTreeDTO dto = new DeviceTreeDTO();
+            DeviceTreeVO dto = new DeviceTreeVO();
             BeanUtils.copyProperties(device, dto);
             treeList.add(dto);
         }
 
-        Map<String, List<DeviceTreeDTO>> parentMap = treeList.stream()
+        Map<String, List<DeviceTreeVO>> parentMap = treeList.stream()
                 .filter(d -> d.getParentCode() != null)
-                .collect(Collectors.groupingBy(DeviceTreeDTO::getParentCode));
+                .collect(Collectors.groupingBy(DeviceTreeVO::getParentCode));
 
-        for (DeviceTreeDTO dto : treeList) {
-            List<DeviceTreeDTO> children = parentMap.get(dto.getCode());
+        for (DeviceTreeVO dto : treeList) {
+            List<DeviceTreeVO> children = parentMap.get(dto.getCode());
             if (children != null) {
                 dto.setChildren(children);
             }
@@ -128,21 +128,21 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .collect(Collectors.toList());
     }
 
-    private List<DeviceTreeDTO> buildTreeWithFilter(List<Device> devices, String filterName) {
-        List<DeviceTreeDTO> treeList = new ArrayList<>();
+    private List<DeviceTreeVO> buildTreeWithFilter(List<Device> devices, String filterName) {
+        List<DeviceTreeVO> treeList = new ArrayList<>();
 
         for (Device device : devices) {
-            DeviceTreeDTO dto = new DeviceTreeDTO();
+            DeviceTreeVO dto = new DeviceTreeVO();
             BeanUtils.copyProperties(device, dto);
             treeList.add(dto);
         }
 
-        Map<String, List<DeviceTreeDTO>> parentMap = treeList.stream()
+        Map<String, List<DeviceTreeVO>> parentMap = treeList.stream()
                 .filter(d -> d.getParentCode() != null)
-                .collect(Collectors.groupingBy(DeviceTreeDTO::getParentCode));
+                .collect(Collectors.groupingBy(DeviceTreeVO::getParentCode));
 
-        for (DeviceTreeDTO dto : treeList) {
-            List<DeviceTreeDTO> children = parentMap.get(dto.getCode());
+        for (DeviceTreeVO dto : treeList) {
+            List<DeviceTreeVO> children = parentMap.get(dto.getCode());
             if (children != null) {
                 dto.setChildren(children);
             }
@@ -161,11 +161,11 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .collect(Collectors.toList());
     }
 
-    private boolean hasMatchingChild(DeviceTreeDTO node, String filterName) {
+    private boolean hasMatchingChild(DeviceTreeVO node, String filterName) {
         if (node.getChildren() == null || node.getChildren().isEmpty()) {
             return false;
         }
-        for (DeviceTreeDTO child : node.getChildren()) {
+        for (DeviceTreeVO child : node.getChildren()) {
             if (child.getName().contains(filterName)) {
                 return true;
             }
@@ -176,21 +176,21 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         return false;
     }
 
-    private List<DeviceTreeDTO> buildTree(List<Device> devices) {
-        List<DeviceTreeDTO> treeList = new ArrayList<>();
+    private List<DeviceTreeVO> buildTree(List<Device> devices) {
+        List<DeviceTreeVO> treeList = new ArrayList<>();
 
         for (Device device : devices) {
-            DeviceTreeDTO dto = new DeviceTreeDTO();
+            DeviceTreeVO dto = new DeviceTreeVO();
             BeanUtils.copyProperties(device, dto);
             treeList.add(dto);
         }
 
-        Map<String, List<DeviceTreeDTO>> parentMap = treeList.stream()
+        Map<String, List<DeviceTreeVO>> parentMap = treeList.stream()
                 .filter(d -> d.getParentCode() != null)
-                .collect(Collectors.groupingBy(DeviceTreeDTO::getParentCode));
+                .collect(Collectors.groupingBy(DeviceTreeVO::getParentCode));
 
-        for (DeviceTreeDTO dto : treeList) {
-            List<DeviceTreeDTO> children = parentMap.get(dto.getCode());
+        for (DeviceTreeVO dto : treeList) {
+            List<DeviceTreeVO> children = parentMap.get(dto.getCode());
             if (children != null) {
                 dto.setChildren(children);
             }

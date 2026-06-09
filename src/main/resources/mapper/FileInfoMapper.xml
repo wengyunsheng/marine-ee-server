@@ -16,13 +16,6 @@
         <result column="update_time" property="updateTime"/>
     </resultMap>
 
-    <select id="selectByBusinessId" resultMap="BaseResultMap">
-        SELECT * FROM file_info
-        WHERE business_type = #{businessType}
-          AND business_id = #{businessId}
-          AND is_deleted = 0
-    </select>
-
     <update id="logicDeleteById">
         UPDATE file_info
         SET is_deleted = 1

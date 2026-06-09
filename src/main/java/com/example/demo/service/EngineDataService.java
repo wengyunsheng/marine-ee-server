@@ -3,7 +3,7 @@ package com.example.demo.service;
 import com.example.demo.entity.EngineInfo;
 import com.example.demo.entity.dto.EngineImportDTO;
 import com.example.demo.entity.dto.EngineQueryDTO;
-import com.example.demo.entity.dto.EvaluationResultDTO;
+import com.example.demo.entity.vo.EvaluationResultVO;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -16,9 +16,9 @@ public interface EngineDataService {
 
     List<EngineInfo> queryEngines(EngineQueryDTO queryDTO);
 
-    EvaluationResultDTO completeEvaluation(Long engineId);
+    EvaluationResultVO completeEvaluation(Long engineId);
 
-    EvaluationResultDTO calculateEfficiency(Long engineId);
+    EvaluationResultVO calculateEfficiency(Long engineId);
 
-    EvaluationResultDTO getEvaluation(Long engineId);
+    EvaluationResultVO getEvaluation(Long engineId);
 }

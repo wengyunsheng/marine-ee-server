@@ -13,14 +13,4 @@ public class DeviceQueryDTO implements Serializable {
 
     private String parentCode;
 
-    public DeviceQueryDTO() {
-    }
-
-    @Override
-    public String toString() {
-        return "DeviceQueryDTO{" +
-                "name='" + name + '\'' +
-                ", parentCode='" + parentCode + '\'' +
-                '}';
-    }
 }

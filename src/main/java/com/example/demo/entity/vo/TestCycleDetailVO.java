@@ -1,4 +1,4 @@
-package com.example.demo.entity.dto;
+package com.example.demo.entity.vo;
 
 import lombok.Data;
 
@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 @Data
-public class TestCycleDetailDTO implements Serializable {
+public class TestCycleDetailVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -19,9 +19,14 @@ public class TestCycleDetailDTO implements Serializable {
 
     @Data
     public static class ConditionDTO implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         private Integer conditionNo;
+
         private String engineSpeed;
+
         private String powerMode;
+
         private BigDecimal weightCoefficient;
     }
 }

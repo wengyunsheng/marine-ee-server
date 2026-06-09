@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.demo.entity.*;
 import com.example.demo.entity.dto.EngineImportDTO;
 import com.example.demo.entity.dto.EngineQueryDTO;
-import com.example.demo.entity.dto.EvaluationResultDTO;
+import com.example.demo.entity.vo.EvaluationResultVO;
 import com.example.demo.mapper.*;
 import com.example.demo.service.EngineDataService;
 import lombok.RequiredArgsConstructor;
@@ -380,9 +380,9 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
     @Override
     @Transactional
-    public EvaluationResultDTO completeEvaluation(Long engineId) {
+    public EvaluationResultVO completeEvaluation(Long engineId) {
         try {
-            EvaluationResultDTO result = calculateEfficiency(engineId);
+            EvaluationResultVO result = calculateEfficiency(engineId);
             if (result == null) {
                 log.warn("评估失败，无法计算能效指标: engineId={}", engineId);
                 return null;
@@ -409,7 +409,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     }
 
     @Override
-    public EvaluationResultDTO calculateEfficiency(Long engineId) {
+    public EvaluationResultVO calculateEfficiency(Long engineId) {
         EngineInfo engineInfo = getById(engineId);
         if (engineInfo == null) {
             throw new IllegalArgumentException("发动机不存在");
@@ -462,7 +462,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                 .findFirst()
                 .orElse(baseValueRecords.get(0));
 
-        EvaluationResultDTO result = new EvaluationResultDTO();
+        EvaluationResultVO result = new EvaluationResultVO();
         result.setEfficiencyIndex(efficiencyIndex);
         result.setEfficiencyLevel(efficiencyLevel);
         result.setBaseValue(baseValueRecord.getBaseValue());
@@ -476,8 +476,8 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     }
 
     @Override
-    public EvaluationResultDTO getEvaluation(Long engineId) {
-        EvaluationResultDTO result = new EvaluationResultDTO();
+    public EvaluationResultVO getEvaluation(Long engineId) {
+        EvaluationResultVO result = new EvaluationResultVO();
         EngineInfo engineInfo = getById(engineId);
         if (engineInfo == null) {
             log.warn("发动机不存在: engineId={}", engineId);

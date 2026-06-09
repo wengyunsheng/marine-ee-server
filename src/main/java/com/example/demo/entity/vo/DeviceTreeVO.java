@@ -1,4 +1,4 @@
-package com.example.demo.entity.dto;
+package com.example.demo.entity.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class DeviceTreeDTO implements Serializable {
+public class DeviceTreeVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -35,25 +35,6 @@ public class DeviceTreeDTO implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime deleteTime;
 
-    private List<DeviceTreeDTO> children;
+    private List<DeviceTreeVO> children;
 
-    public DeviceTreeDTO() {
-    }
-
-    @Override
-    public String toString() {
-        return "DeviceTreeDTO{" +
-                "id=" + id +
-                ", code='" + code + '\'' +
-                ", parentCode='" + parentCode + '\'' +
-                ", name='" + name + '\'' +
-                ", modelFileId=" + modelFileId +
-                ", sort=" + sort +
-                ", isDeleted=" + isDeleted +
-                ", createTime=" + createTime +
-                ", updateTime=" + updateTime +
-                ", deleteTime=" + deleteTime +
-                ", children=" + children +
-                '}';
-    }
 }
