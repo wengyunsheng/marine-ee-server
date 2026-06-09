@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.dto.Result;
-import com.example.demo.entity.dto.TestCycleDetailDTO;
+import com.example.demo.entity.vo.ResultVO;
+import com.example.demo.entity.vo.TestCycleDetailVO;
 import com.example.demo.service.TestCycleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,9 +29,9 @@ public class TestCycleController {
      * @return 试验循环详情列表
      */
     @GetMapping("/cycle-details")
-    public Result<List<TestCycleDetailDTO>> getAllCycleDetails() {
-        List<TestCycleDetailDTO> details = testCycleService.getAllCycleDetails();
-        return Result.success(details, details.size());
+    public ResultVO<List<TestCycleDetailVO>> getAllCycleDetails() {
+        List<TestCycleDetailVO> details = testCycleService.getAllCycleDetails();
+        return ResultVO.success(details, details.size());
     }
 
 }

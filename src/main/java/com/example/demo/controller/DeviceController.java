@@ -1,9 +1,9 @@
 package com.example.demo.controller;
 
-import com.example.demo.entity.dto.DeviceOptionDTO;
+import com.example.demo.entity.vo.DeviceOptionVO;
 import com.example.demo.entity.dto.DeviceQueryDTO;
-import com.example.demo.entity.dto.DeviceTreeDTO;
-import com.example.demo.entity.dto.Result;
+import com.example.demo.entity.vo.DeviceTreeVO;
+import com.example.demo.entity.vo.ResultVO;
 import com.example.demo.service.DeviceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -29,9 +29,9 @@ public class DeviceController {
      * @return 父设备选项列表
      */
     @GetMapping("/parent-options")
-    public Result<List<DeviceOptionDTO>> getParentDeviceOptions() {
-        List<DeviceOptionDTO> options = deviceService.getParentDeviceOptions();
-        return Result.success(options, options.size());
+    public ResultVO<List<DeviceOptionVO>> getParentDeviceOptions() {
+        List<DeviceOptionVO> options = deviceService.getParentDeviceOptions();
+        return ResultVO.success(options, options.size());
     }
 
     /**
@@ -44,9 +44,9 @@ public class DeviceController {
      * @return 设备树形结构列表
      */
     @PostMapping("/tree")
-    public Result<List<DeviceTreeDTO>> getDeviceTree(@RequestBody DeviceQueryDTO queryDTO) {
-        List<DeviceTreeDTO> tree = deviceService.getDeviceTree(queryDTO);
-        return Result.success(tree, tree.size());
+    public ResultVO<List<DeviceTreeVO>> getDeviceTree(@RequestBody DeviceQueryDTO queryDTO) {
+        List<DeviceTreeVO> tree = deviceService.getDeviceTree(queryDTO);
+        return ResultVO.success(tree, tree.size());
     }
 
 }
