@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.entity.EngineInfo;
 import com.example.demo.entity.dto.EngineQueryDTO;
+import com.example.demo.entity.dto.EvaluationResultDTO;
 import com.example.demo.entity.dto.Result;
 import com.example.demo.entity.vo.EngineDetailVO;
 import com.example.demo.service.EngineDataService;
@@ -78,4 +79,27 @@ public class EngineDataController {
             return Result.error("删除失败: " + e.getMessage());
         }
     }
+
+    @GetMapping("/evaluate/{engineId}")
+    public Result<EvaluationResultDTO> getEvaluation(@PathVariable Long engineId) {
+        try {
+            EvaluationResultDTO result = engineDataService.getEvaluation(engineId);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("获取能效指标失败: engineId={}", engineId, e);
+            return Result.error("获取失败: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/evaluate/{engineId}")
+    public Result<EvaluationResultDTO> completeEvaluation(@PathVariable Long engineId) {
+        try {
+            EvaluationResultDTO result = engineDataService.completeEvaluation(engineId);
+            return Result.success(result);
+        } catch (Exception e) {
+            log.error("计算能效指标失败: engineId={}", engineId, e);
+            return Result.error("计算失败: " + e.getMessage());
+        }
+    }
+
 }
