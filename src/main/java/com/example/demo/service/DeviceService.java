@@ -10,8 +10,6 @@ import java.util.List;
 
 public interface DeviceService extends IService<Device> {
 
-    List<Device> getAllDevices();
-
     List<DeviceTreeDTO> getDeviceTree(DeviceQueryDTO queryDTO);
 
     List<DeviceOptionDTO> getParentDeviceOptions();

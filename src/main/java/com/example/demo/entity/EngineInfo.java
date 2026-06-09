@@ -67,6 +67,23 @@ public class EngineInfo implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createdTime;
 
+    @TableField("is_evaluated")
+    private Boolean isEvaluated;
+
+    @TableField("efficiency_index")
+    private BigDecimal efficiencyIndex;
+
+    @TableField("efficiency_level")
+    private Integer efficiencyLevel;
+
+    @TableField("efficiency_base_value")
+    private BigDecimal efficiencyBaseValue;
+
+    @TableField("evaluation_time")
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime evaluationTime;
+
+
     @TableField(exist = false)
     private EngineTestCondition testCondition;
 

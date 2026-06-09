@@ -6,12 +6,10 @@
         <id column="id" property="id"/>
         <result column="cycle_code" property="cycleCode"/>
         <result column="cycle_name" property="cycleName"/>
-        <result column="device_type" property="deviceType"/>
         <result column="condition_no" property="conditionNo"/>
         <result column="engine_speed" property="engineSpeed"/>
         <result column="power_mode" property="powerMode"/>
         <result column="weight_coefficient" property="weightCoefficient"/>
-        <result column="sort" property="sort"/>
         <result column="is_deleted" property="isDeleted"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>

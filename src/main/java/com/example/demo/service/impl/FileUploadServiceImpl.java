@@ -7,28 +7,26 @@ import com.example.demo.mapper.DeviceMapper;
 import com.example.demo.service.FileInfoService;
 import com.example.demo.service.FileUploadService;
 import com.example.demo.util.FileUploadUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import java.io.IOException;
 import java.time.LocalDateTime;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class FileUploadServiceImpl implements FileUploadService {
 
-    @Resource
-    private FileUploadUtil fileUploadUtil;
+    private final FileUploadUtil fileUploadUtil;
 
-    @Resource
-    private DeviceMapper deviceMapper;
+    private final DeviceMapper deviceMapper;
 
-    @Resource
-    private FileInfoService fileInfoService;
+    private final FileInfoService fileInfoService;
 
     @Value("${file.upload.path}")
     private String basePath;

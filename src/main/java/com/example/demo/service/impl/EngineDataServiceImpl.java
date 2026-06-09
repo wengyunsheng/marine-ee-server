@@ -2,16 +2,13 @@ package com.example.demo.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.example.demo.entity.EngineInfo;
-import com.example.demo.entity.EnginePerformanceCurve;
-import com.example.demo.entity.EngineTestCondition;
+import com.example.demo.entity.*;
 import com.example.demo.entity.dto.EngineImportDTO;
 import com.example.demo.entity.dto.EngineQueryDTO;
-import com.example.demo.entity.vo.EngineDetailVO;
-import com.example.demo.mapper.EngineInfoMapper;
-import com.example.demo.mapper.EnginePerformanceCurveMapper;
-import com.example.demo.mapper.EngineTestConditionMapper;
+import com.example.demo.entity.dto.EvaluationResultDTO;
+import com.example.demo.mapper.*;
 import com.example.demo.service.EngineDataService;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
@@ -24,22 +21,21 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Slf4j
+@RequiredArgsConstructor
 @Service
 public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineInfo> implements EngineDataService {
 
     private final EngineTestConditionMapper testConditionMapper;
     private final EnginePerformanceCurveMapper performanceCurveMapper;
-
-    public EngineDataServiceImpl(EngineTestConditionMapper testConditionMapper,
-                                 EnginePerformanceCurveMapper performanceCurveMapper) {
-        this.testConditionMapper = testConditionMapper;
-        this.performanceCurveMapper = performanceCurveMapper;
-    }
+    private final EngineEfficiencyMapper engineEfficiencyMapper;
+    private final TestCycleMapper testCycleMapper;
 
     @Override
     @Transactional
@@ -349,30 +345,6 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     }
 
     @Override
-    public EngineDetailVO getEngineDetail(Long engineId) {
-        EngineInfo engineInfo = getById(engineId);
-        if (engineInfo == null) {
-            return null;
-        }
-
-        EngineDetailVO vo = new EngineDetailVO();
-        vo.setEngineInfo(engineInfo);
-
-        LambdaQueryWrapper<EngineTestCondition> conditionWrapper = new LambdaQueryWrapper<>();
-        conditionWrapper.eq(EngineTestCondition::getEngineId, engineId);
-        EngineTestCondition condition = testConditionMapper.selectOne(conditionWrapper);
-        vo.setTestCondition(condition);
-
-        LambdaQueryWrapper<EnginePerformanceCurve> curveWrapper = new LambdaQueryWrapper<>();
-        curveWrapper.eq(EnginePerformanceCurve::getEngineId, engineId)
-                .orderByAsc(EnginePerformanceCurve::getLoadFactor);
-        List<EnginePerformanceCurve> curves = performanceCurveMapper.selectList(curveWrapper);
-        vo.setPerformanceCurves(curves);
-
-        return vo;
-    }
-
-    @Override
     public List<EngineInfo> queryEngines(EngineQueryDTO queryDTO) {
         LambdaQueryWrapper<EngineInfo> wrapper = new LambdaQueryWrapper<>();
 
@@ -408,22 +380,207 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
     @Override
     @Transactional
-    public boolean deleteEngine(Long engineId) {
-        LambdaQueryWrapper<EnginePerformanceCurve> curveWrapper = new LambdaQueryWrapper<>();
-        curveWrapper.eq(EnginePerformanceCurve::getEngineId, engineId);
-        performanceCurveMapper.delete(curveWrapper);
+    public EvaluationResultDTO completeEvaluation(Long engineId) {
+        try {
+            EvaluationResultDTO result = calculateEfficiency(engineId);
+            if (result == null) {
+                log.warn("评估失败，无法计算能效指标: engineId={}", engineId);
+                return null;
+            }
 
-        LambdaQueryWrapper<EngineTestCondition> conditionWrapper = new LambdaQueryWrapper<>();
-        conditionWrapper.eq(EngineTestCondition::getEngineId, engineId);
-        testConditionMapper.delete(conditionWrapper);
+            EngineInfo engineInfo = getById(engineId);
+            if (engineInfo == null) {
+                log.warn("发动机不存在: engineId={}", engineId);
+                return null;
+            }
 
-        return removeById(engineId);
+            engineInfo.setIsEvaluated(true);
+            engineInfo.setEfficiencyIndex(result.getEfficiencyIndex());
+            engineInfo.setEfficiencyLevel(result.getEfficiencyLevel());
+            engineInfo.setEfficiencyBaseValue(result.getBaseValue());
+            engineInfo.setEvaluationTime(LocalDateTime.now());
+
+            updateById(engineInfo);
+            return result;
+        } catch (Exception e) {
+            log.error("评估失败: engineId={}", engineId, e);
+            return null;
+        }
     }
 
     @Override
-    public List<EngineInfo> getEngineList() {
-        LambdaQueryWrapper<EngineInfo> wrapper = new LambdaQueryWrapper<>();
-        wrapper.orderByDesc(EngineInfo::getCreatedTime);
-        return list(wrapper);
+    public EvaluationResultDTO calculateEfficiency(Long engineId) {
+        EngineInfo engineInfo = getById(engineId);
+        if (engineInfo == null) {
+            throw new IllegalArgumentException("发动机不存在");
+        }
+
+        LambdaQueryWrapper<EnginePerformanceCurve> curveWrapper = new LambdaQueryWrapper<>();
+        curveWrapper.eq(EnginePerformanceCurve::getEngineId, engineId)
+                .orderByAsc(EnginePerformanceCurve::getLoadFactor);
+        List<EnginePerformanceCurve> curves = performanceCurveMapper.selectList(curveWrapper);
+
+        if (curves == null || curves.isEmpty()) {
+            throw new IllegalArgumentException("发动机性能曲线数据不完整");
+        }
+
+        List<BigDecimal> weightFactors = getWeightFactors(engineInfo.getEngineUsage());
+
+        BigDecimal sumWeightedSFOC = BigDecimal.ZERO;
+        for (int i = 0; i < curves.size(); i++) {
+            EnginePerformanceCurve curve = curves.get(i);
+            BigDecimal bsfc = curve.getBsfc();
+            if (bsfc == null || bsfc.compareTo(BigDecimal.ZERO) == 0) {
+                continue;
+            }
+
+            BigDecimal weight = weightFactors.get(i);
+            sumWeightedSFOC = sumWeightedSFOC.add(weight.divide(bsfc, 10, RoundingMode.HALF_UP));
+        }
+
+        BigDecimal efficiencyIndex = BigDecimal.valueOf(84.309133)
+                .multiply(sumWeightedSFOC)
+                .setScale(2, RoundingMode.HALF_UP);
+
+        BigDecimal singleCylinderPower = BigDecimal.valueOf(engineInfo.getRatedPower())
+                .divide(BigDecimal.valueOf(engineInfo.getCylinderCount()), 2, RoundingMode.HALF_UP);
+
+        List<EngineEfficiency> baseValueRecords = findBaseValues(
+                engineInfo.getEmissionStandard(),
+                singleCylinderPower
+        );
+
+        if (baseValueRecords == null || baseValueRecords.isEmpty()) {
+            throw new IllegalArgumentException("未找到匹配的能效基值，排放等级=" + engineInfo.getEmissionStandard()
+                    + ", 单缸功率=" + singleCylinderPower);
+        }
+
+        int efficiencyLevel = determineEfficiencyLevel(efficiencyIndex, baseValueRecords);
+
+        EngineEfficiency baseValueRecord = baseValueRecords.stream()
+                .filter(r -> r.getEfficiencyLevel().equals(efficiencyLevel))
+                .findFirst()
+                .orElse(baseValueRecords.get(0));
+
+        EvaluationResultDTO result = new EvaluationResultDTO();
+        result.setEfficiencyIndex(efficiencyIndex);
+        result.setEfficiencyLevel(efficiencyLevel);
+        result.setBaseValue(baseValueRecord.getBaseValue());
+        result.setLevelDescription("能效等级 " + efficiencyLevel + " 级");
+        result.setPassed(efficiencyLevel <= 2);
+
+        log.info("评估完成: engineId={}, 能效指标={}, 能效等级={}级, 基值={}, 单缸功率={}",
+                engineId, efficiencyIndex, efficiencyLevel, baseValueRecord.getBaseValue(), singleCylinderPower);
+
+        return result;
+    }
+
+    @Override
+    public EvaluationResultDTO getEvaluation(Long engineId) {
+        EvaluationResultDTO result = new EvaluationResultDTO();
+        EngineInfo engineInfo = getById(engineId);
+        if (engineInfo == null) {
+            log.warn("发动机不存在: engineId={}", engineId);
+            return null;
+        }
+
+        result.setEfficiencyIndex(engineInfo.getEfficiencyIndex());
+        result.setEfficiencyLevel(engineInfo.getEfficiencyLevel());
+        result.setBaseValue(engineInfo.getEfficiencyBaseValue());
+        result.setLevelDescription("能效等级 " + engineInfo.getEfficiencyLevel() + " 级");
+        result.setPassed(engineInfo.getEfficiencyLevel() <= 2);
+        return result;
+    }
+
+    private List<BigDecimal> getWeightFactors(String engineUsage) {
+        if (engineUsage == null) {
+            throw new IllegalArgumentException("发动机用途不能为空");
+        }
+
+        String cycleCode = determineCycleCode(engineUsage);
+
+        LambdaQueryWrapper<TestCycle> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(TestCycle::getCycleCode, cycleCode)
+                .eq(TestCycle::getIsDeleted, 0)
+                .orderByAsc(TestCycle::getConditionNo);
+
+        List<TestCycle> testCycles = testCycleMapper.selectList(wrapper);
+
+        if (testCycles == null || testCycles.isEmpty()) {
+            throw new IllegalArgumentException("未找到试验循环 " + cycleCode + " 的加权系数数据");
+        }
+
+        List<BigDecimal> weightFactors = new ArrayList<>();
+        for (TestCycle cycle : testCycles) {
+            weightFactors.add(cycle.getWeightCoefficient());
+        }
+
+        log.info("查询试验循环: cycleCode={}, cycleName={}, 加权系数数量={}",
+                cycleCode, testCycles.get(0).getCycleName(), weightFactors.size());
+
+        return weightFactors;
+    }
+
+    private String determineCycleCode(String engineUsage) {
+        if (engineUsage.contains("恒速") && (engineUsage.contains("主机") || engineUsage.contains("电力推进"))) {
+            return "E2";
+        } else if (engineUsage.contains("按推进特性") || engineUsage.contains("推进特性")) {
+            return "E3";
+        } else if (engineUsage.contains("恒速") && engineUsage.contains("辅机")) {
+            return "D2";
+        } else {
+            log.warn("无法识别发动机用途: {}, 默认使用 E2 试验循环", engineUsage);
+            return "E2";
+        }
+    }
+
+    private List<EngineEfficiency> findBaseValues(String emissionStandard, BigDecimal singleCylinderPower) {
+        LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(EngineEfficiency::getEmissionLevel, emissionStandard)
+                .eq(EngineEfficiency::getIsDeleted, 0);
+
+        List<EngineEfficiency> allRecords = engineEfficiencyMapper.selectList(wrapper);
+
+        if (allRecords == null || allRecords.isEmpty()) {
+            return null;
+        }
+
+        List<EngineEfficiency> matchedRecords = new ArrayList<>();
+
+        for (EngineEfficiency record : allRecords) {
+            BigDecimal minPower = record.getPowerRangeMin();
+            BigDecimal maxPower = record.getPowerRangeMax();
+
+            boolean inRange = minPower == null || singleCylinderPower.compareTo(minPower) >= 0;
+
+            if (maxPower != null && singleCylinderPower.compareTo(maxPower) >= 0) {
+                inRange = false;
+            }
+
+            if (inRange) {
+                matchedRecords.add(record);
+            }
+        }
+
+        if (matchedRecords.isEmpty()) {
+            return null;
+        }
+
+        matchedRecords.sort(Comparator.comparing(EngineEfficiency::getEfficiencyLevel));
+        return matchedRecords;
+    }
+
+    private int determineEfficiencyLevel(BigDecimal efficiencyIndex, List<EngineEfficiency> baseValues) {
+        if (baseValues == null || baseValues.isEmpty()) {
+            throw new IllegalArgumentException("未找到匹配的能效基值");
+        }
+
+        for (EngineEfficiency baseValue : baseValues) {
+            if (efficiencyIndex.compareTo(baseValue.getBaseValue()) <= 0) {
+                return baseValue.getEfficiencyLevel();
+            }
+        }
+
+        return baseValues.get(baseValues.size() - 1).getEfficiencyLevel();
     }
 }

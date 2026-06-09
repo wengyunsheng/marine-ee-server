@@ -10,9 +10,7 @@ import com.example.demo.mapper.DeviceMapper;
 import com.example.demo.service.DeviceService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,28 +18,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements DeviceService {
-
-    @Override
-    @Transactional
-    public boolean save(Device device) {
-        if (device.getIsDeleted() == null) {
-            device.setIsDeleted(0);
-        }
-        if (device.getSort() == null) {
-            device.setSort(0);
-        }
-        device.setCreateTime(LocalDateTime.now());
-        device.setUpdateTime(LocalDateTime.now());
-        return super.save(device);
-    }
-
-    @Override
-    public List<Device> getAllDevices() {
-        LambdaQueryWrapper<Device> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Device::getIsDeleted, 0)
-                .orderByAsc(Device::getSort, Device::getId);
-        return baseMapper.selectList(wrapper);
-    }
 
     @Override
     public List<DeviceTreeDTO> getDeviceTree(DeviceQueryDTO queryDTO) {
@@ -172,23 +148,20 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             }
         }
 
-        Map<String, DeviceTreeDTO> deviceMap = treeList.stream()
-                .collect(Collectors.toMap(DeviceTreeDTO::getCode, d -> d));
-
         return treeList.stream()
                 .filter(d -> {
                     if (d.getParentCode() == null) {
                         if (d.getName().contains(filterName)) {
                             return true;
                         }
-                        return hasMatchingChild(d, filterName, deviceMap);
+                        return hasMatchingChild(d, filterName);
                     }
                     return false;
                 })
                 .collect(Collectors.toList());
     }
 
-    private boolean hasMatchingChild(DeviceTreeDTO node, String filterName, Map<String, DeviceTreeDTO> deviceMap) {
+    private boolean hasMatchingChild(DeviceTreeDTO node, String filterName) {
         if (node.getChildren() == null || node.getChildren().isEmpty()) {
             return false;
         }
@@ -196,7 +169,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             if (child.getName().contains(filterName)) {
                 return true;
             }
-            if (hasMatchingChild(child, filterName, deviceMap)) {
+            if (hasMatchingChild(child, filterName)) {
                 return true;
             }
         }
