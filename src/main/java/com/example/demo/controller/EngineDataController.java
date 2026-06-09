@@ -4,7 +4,6 @@ import com.example.demo.entity.EngineInfo;
 import com.example.demo.entity.dto.EngineQueryDTO;
 import com.example.demo.entity.dto.EvaluationResultDTO;
 import com.example.demo.entity.dto.Result;
-import com.example.demo.entity.vo.EngineDetailVO;
 import com.example.demo.service.EngineDataService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,41 +42,10 @@ public class EngineDataController {
         }
     }
 
-    @GetMapping("/detail/{engineId}")
-    public Result<EngineDetailVO> getEngineDetail(@PathVariable Long engineId) {
-        EngineDetailVO detail = engineDataService.getEngineDetail(engineId);
-        if (detail != null) {
-            return Result.success(detail);
-        } else {
-            return Result.error("发动机数据不存在");
-        }
-    }
-
     @PostMapping("/list")
     public Result<List<EngineInfo>> queryEngines(@RequestBody EngineQueryDTO queryDTO) {
         List<EngineInfo> list = engineDataService.queryEngines(queryDTO);
         return Result.success(list);
-    }
-
-    @GetMapping("/list-all")
-    public Result<List<EngineInfo>> getEngineList() {
-        List<EngineInfo> list = engineDataService.getEngineList();
-        return Result.success(list, list.size());
-    }
-
-    @DeleteMapping("/{engineId}")
-    public Result<Void> deleteEngine(@PathVariable Long engineId) {
-        try {
-            boolean success = engineDataService.deleteEngine(engineId);
-            if (success) {
-                return Result.successMessage("删除成功");
-            } else {
-                return Result.error("删除失败");
-            }
-        } catch (Exception e) {
-            log.error("删除发动机数据失败", e);
-            return Result.error("删除失败: " + e.getMessage());
-        }
     }
 
     @GetMapping("/evaluate/{engineId}")

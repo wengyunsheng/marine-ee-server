@@ -3,64 +3,28 @@ package com.example.demo.controller;
 import com.example.demo.entity.*;
 import com.example.demo.entity.dto.Result;
 import com.example.demo.service.*;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+
 /**
  * 能效等级控制器
- * 提供能效等级和能效基值查询功能
  *
  * @author admin
  * @since 2026-06-02
  */
 @Slf4j
+@RequiredArgsConstructor
 @RestController
 @RequestMapping("/api/efficiency")
 public class EfficiencyController {
 
-    @Autowired
-    private EngineEfficiencyService engineEfficiencyService;
-
-    @Autowired
-    private WasteHeatOrganicRankineEfficiencyService organicRankineEfficiencyService;
-
-    @Autowired
-    private SteamTurbineEfficiencyService steamTurbineEfficiencyService;
-
-    @Autowired
-    private IncineratorEfficiencyService incineratorEfficiencyService;
-
-    @Autowired
-    private DiscSeparatorEfficiencyService discSeparatorEfficiencyService;
-
-    @Autowired
-    private BallastWaterTreatmentEfficiencyService ballastWaterTreatmentEfficiencyService;
-
-    @Autowired
-    private WindlassEfficiencyService windlassEfficiencyService;
-
-    @Autowired
-    private CraneEfficiencyService craneEfficiencyService;
-
-    @Autowired
-    private GeneratorEfficiencyService generatorEfficiencyService;
-
-    @Autowired
-    private AhuEfficiencyService ahuEfficiencyService;
-
-    @Autowired
-    private ChillerEfficiencyService chillerEfficiencyService;
-
-    @Autowired
-    private InertGasEfficiencyService inertGasEfficiencyService;
-
-    @Autowired
-    private Co2CaptureEfficiencyService co2CaptureEfficiencyService;
+    private final EfficiencyService efficiencyService;
 
     /**
      * 查询船用发动机能效等级列表
@@ -71,7 +35,7 @@ public class EfficiencyController {
      */
     @GetMapping("/engine/list")
     public Result<List<EngineEfficiency>> getEngineList(@RequestParam(required = false) String engineType) {
-        List<EngineEfficiency> list = engineEfficiencyService.getList(engineType);
+        List<EngineEfficiency> list = efficiencyService.getEngineList(engineType);
         return Result.success(list, list.size());
     }
 
@@ -82,7 +46,7 @@ public class EfficiencyController {
      */
     @GetMapping("/organic-rankine/list")
     public Result<List<WasteHeatOrganicRankineEfficiency>> getOrganicRankineList() {
-        List<WasteHeatOrganicRankineEfficiency> list = organicRankineEfficiencyService.getList();
+        List<WasteHeatOrganicRankineEfficiency> list = efficiencyService.getOrganicRankineList();
         return Result.success(list, list.size());
     }
 
@@ -93,7 +57,7 @@ public class EfficiencyController {
      */
     @GetMapping("/steam-turbine/list")
     public Result<List<SteamTurbineEfficiency>> getSteamTurbineList() {
-        List<SteamTurbineEfficiency> list = steamTurbineEfficiencyService.getList();
+        List<SteamTurbineEfficiency> list = efficiencyService.getSteamTurbineList();
         return Result.success(list, list.size());
     }
 
@@ -105,7 +69,7 @@ public class EfficiencyController {
      */
     @GetMapping("/incinerator/list")
     public Result<List<IncineratorEfficiency>> getIncineratorList(@RequestParam(required = false) String incineratorType) {
-        List<IncineratorEfficiency> list = incineratorEfficiencyService.getList(incineratorType);
+        List<IncineratorEfficiency> list = efficiencyService.getIncineratorList(incineratorType);
         return Result.success(list, list.size());
     }
 
@@ -116,7 +80,7 @@ public class EfficiencyController {
      */
     @GetMapping("/disc-separator/list")
     public Result<List<DiscSeparatorEfficiency>> getDiscSeparatorList() {
-        List<DiscSeparatorEfficiency> list = discSeparatorEfficiencyService.getList();
+        List<DiscSeparatorEfficiency> list = efficiencyService.getDiscSeparatorList();
         return Result.success(list, list.size());
     }
 
@@ -127,7 +91,7 @@ public class EfficiencyController {
      */
     @GetMapping("/ballast-water-treatment/list")
     public Result<List<BallastWaterTreatmentEfficiency>> getBallastWaterTreatmentList() {
-        List<BallastWaterTreatmentEfficiency> list = ballastWaterTreatmentEfficiencyService.getList();
+        List<BallastWaterTreatmentEfficiency> list = efficiencyService.getBallastWaterTreatmentList();
         return Result.success(list, list.size());
     }
 
@@ -139,7 +103,7 @@ public class EfficiencyController {
      */
     @GetMapping("/windlass/list")
     public Result<List<WindlassEfficiency>> getWindlassList(@RequestParam(required = false) String windlassType) {
-        List<WindlassEfficiency> list = windlassEfficiencyService.getList(windlassType);
+        List<WindlassEfficiency> list = efficiencyService.getWindlassList(windlassType);
         return Result.success(list, list.size());
     }
 
@@ -150,7 +114,7 @@ public class EfficiencyController {
      */
     @GetMapping("/crane/list")
     public Result<List<CraneEfficiency>> getCraneList() {
-        List<CraneEfficiency> list = craneEfficiencyService.getList();
+        List<CraneEfficiency> list = efficiencyService.getCraneList();
         return Result.success(list, list.size());
     }
 
@@ -162,7 +126,7 @@ public class EfficiencyController {
      */
     @GetMapping("/generator/list")
     public Result<List<GeneratorEfficiency>> getGeneratorList(@RequestParam(required = false) String generatorType) {
-        List<GeneratorEfficiency> list = generatorEfficiencyService.getList(generatorType);
+        List<GeneratorEfficiency> list = efficiencyService.getGeneratorList(generatorType);
         return Result.success(list, list.size());
     }
 
@@ -173,7 +137,7 @@ public class EfficiencyController {
      */
     @GetMapping("/ahu/list")
     public Result<List<AhuEfficiency>> getAhuList() {
-        List<AhuEfficiency> list = ahuEfficiencyService.getList();
+        List<AhuEfficiency> list = efficiencyService.getAhuList();
         return Result.success(list, list.size());
     }
 
@@ -184,7 +148,7 @@ public class EfficiencyController {
      */
     @GetMapping("/chiller/list")
     public Result<List<ChillerEfficiency>> getChillerList() {
-        List<ChillerEfficiency> list = chillerEfficiencyService.getList();
+        List<ChillerEfficiency> list = efficiencyService.getChillerList();
         return Result.success(list, list.size());
     }
 
@@ -195,7 +159,7 @@ public class EfficiencyController {
      */
     @GetMapping("/inert-gas/list")
     public Result<List<InertGasEfficiency>> getInertGasList() {
-        List<InertGasEfficiency> list = inertGasEfficiencyService.getList();
+        List<InertGasEfficiency> list = efficiencyService.getInertGasList();
         return Result.success(list, list.size());
     }
 
@@ -206,7 +170,7 @@ public class EfficiencyController {
      */
     @GetMapping("/co2-capture/list")
     public Result<List<Co2CaptureEfficiency>> getCo2CaptureList() {
-        List<Co2CaptureEfficiency> list = co2CaptureEfficiencyService.getList();
+        List<Co2CaptureEfficiency> list = efficiencyService.getCo2CaptureList();
         return Result.success(list, list.size());
     }
 }
