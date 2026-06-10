@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -31,7 +32,7 @@ public class EngineDataController {
      * @return 导入结果
      */
     @PostMapping("/import")
-    public ResultVO<Void> importEngine(@RequestParam("file") MultipartFile file) {
+    public ResultVO<Void> importEngine(@RequestParam("deviceId") Long deviceId, @RequestParam("file") MultipartFile file) {
         try {
             if (file.isEmpty()) {
                 return ResultVO.error("文件不能为空");
@@ -42,7 +43,7 @@ public class EngineDataController {
                 return ResultVO.error("仅支持 Excel 文件（.xlsx 或 .xls）");
             }
 
-            engineDataService.importEngineFromExcel(file);
+            engineDataService.importEngineFromExcel(deviceId, file);
             return ResultVO.success();
         } catch (Exception e) {
             return ResultVO.error("导入失败: " + e.getMessage());
@@ -59,7 +60,7 @@ public class EngineDataController {
      * @return 发动机信息列表
      */
     @PostMapping("/list")
-    public ResultVO<List<EngineInfo>> queryEngines(@RequestBody EngineQueryDTO queryDTO) {
+    public ResultVO<List<EngineInfo>> queryEngines(@RequestBody @Valid EngineQueryDTO queryDTO) {
         try {
             List<EngineInfo> list = engineDataService.queryEngines(queryDTO);
             return ResultVO.success(list);

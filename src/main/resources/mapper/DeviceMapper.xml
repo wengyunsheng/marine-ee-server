@@ -21,7 +21,7 @@
     <select id="selectParentDevices" resultMap="BaseResultMap">
         SELECT * FROM device
         WHERE parent_code IS NULL AND is_deleted = 0
-        ORDER BY sort ASC, id ASC
+        ORDER BY id ASC
     </select>
 
 </mapper>

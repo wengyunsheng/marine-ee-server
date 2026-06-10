@@ -10,7 +10,7 @@ import java.util.List;
 
 public interface EngineDataService {
 
-    int importEngineFromExcel(MultipartFile file);
+    void importEngineFromExcel(Long deviceId, MultipartFile file);
 
     boolean importEngine(EngineImportDTO importDTO);
 

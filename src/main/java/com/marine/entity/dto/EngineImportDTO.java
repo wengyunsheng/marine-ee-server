@@ -12,6 +12,11 @@ public class EngineImportDTO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 设备id
+     */
+    private Long deviceId;
+
+    /**
      * 品牌
      */
     private String brand;

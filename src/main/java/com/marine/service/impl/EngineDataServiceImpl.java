@@ -23,15 +23,14 @@ import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 
 @Slf4j
 @RequiredArgsConstructor
 @Service
 public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineInfo> implements EngineDataService {
 
+    private final DeviceMapper deviceMapper;
     private final EngineTestConditionMapper testConditionMapper;
     private final EnginePerformanceCurveMapper performanceCurveMapper;
     private final EngineEfficiencyMapper engineEfficiencyMapper;
@@ -39,7 +38,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
     @Override
     @Transactional
-    public int importEngineFromExcel(MultipartFile file) {
+    public void importEngineFromExcel(Long deviceId, MultipartFile file) {
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = createWorkbook(file, inputStream)) {
 
@@ -47,7 +46,6 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                 throw new IllegalArgumentException("无法解析Excel文件");
             }
 
-            int totalSuccess = 0;
             int sheetCount = workbook.getNumberOfSheets();
 
             for (int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
@@ -57,12 +55,10 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                     continue;
                 }
                 log.info("开始解析Sheet: {}", sheetName);
-                int successCount = parseSheet(sheet, sheetName);
-                totalSuccess += successCount;
+                int successCount = parseSheet(deviceId, sheet, sheetName);
                 log.info("Sheet {} 导入成功 {} 条", sheetName, successCount);
             }
 
-            return totalSuccess;
         } catch (Exception e) {
             throw new IllegalArgumentException("Excel文件格式错误: " + e.getMessage());
         }
@@ -81,7 +77,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     /**
      * 解析单个Sheet
      */
-    private int parseSheet(Sheet sheet, String dataSource) {
+    private int parseSheet(Long deviceId, Sheet sheet, String dataSource) {
         // 找到数据起始行（第一个"序号"所在行，且序号为数字）
         int dataStartRow = findDataStartRow(sheet);
         if (dataStartRow == -1) {
@@ -105,7 +101,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             }
 
             try {
-                EngineImportDTO dto = parseRow(row, dataSource);
+                EngineImportDTO dto = parseRow(deviceId, row, dataSource);
                 if (importEngine(dto)) {
                     successCount++;
                 }
@@ -139,11 +135,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     /**
      * 解析一行数据
      */
-    private EngineImportDTO parseRow(Row row, String dataSource) {
+    private EngineImportDTO parseRow(Long deviceId, Row row, String dataSource) {
         EngineImportDTO dto = new EngineImportDTO();
 
         // 基础信息（列索引从0开始）
         // 0: 序号（跳过）
+        dto.setDeviceId(deviceId);
         dto.setBrand(getCellValueAsString(row.getCell(1)));
         dto.setModel(getCellValueAsString(row.getCell(2)));
         dto.setCylinderCount(getCellValueAsInteger(row.getCell(3)));
@@ -237,7 +234,6 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     }
 
     @Override
-    @Transactional
     public boolean importEngine(EngineImportDTO importDTO) {
         // 保存发动机信息
         EngineInfo engineInfo = new EngineInfo();
@@ -345,8 +341,11 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     public List<EngineInfo> queryEngines(EngineQueryDTO queryDTO) {
         LambdaQueryWrapper<EngineInfo> wrapper = new LambdaQueryWrapper<>();
 
+        if (queryDTO.getDeviceId() != null) {
+            wrapper.eq(EngineInfo::getDeviceId, queryDTO.getDeviceId());
+        }
         if (StringUtils.hasText(queryDTO.getBrand())) {
-            wrapper.eq(EngineInfo::getBrand, queryDTO.getBrand());
+            wrapper.like(EngineInfo::getBrand, queryDTO.getBrand());
         }
         if (StringUtils.hasText(queryDTO.getModel())) {
             wrapper.like(EngineInfo::getModel, queryDTO.getModel());
@@ -412,6 +411,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             throw new IllegalArgumentException("发动机不存在");
         }
 
+        Long deviceId = engineInfo.getDeviceId();
+        Device device = deviceMapper.selectById(deviceId);
+        if (device == null) {
+            throw new IllegalArgumentException("设备不存在");
+        }
+
         LambdaQueryWrapper<EnginePerformanceCurve> curveWrapper = new LambdaQueryWrapper<>();
         curveWrapper.eq(EnginePerformanceCurve::getEngineId, engineId)
                 .orderByAsc(EnginePerformanceCurve::getLoadFactor);
@@ -421,17 +426,22 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             throw new IllegalArgumentException("发动机性能曲线数据不完整");
         }
 
-        List<BigDecimal> weightFactors = getWeightFactors(engineInfo.getEngineUsage());
+        Map<BigDecimal, BigDecimal> weightFactorsMap = getWeightFactors(engineInfo.getEngineUsage());
 
         BigDecimal sumWeightedSFOC = BigDecimal.ZERO;
-        for (int i = 0; i < curves.size(); i++) {
-            EnginePerformanceCurve curve = curves.get(i);
+        for (EnginePerformanceCurve curve : curves) {
             BigDecimal bsfc = curve.getBsfc();
             if (bsfc == null || bsfc.compareTo(BigDecimal.ZERO) == 0) {
                 continue;
             }
 
-            BigDecimal weight = weightFactors.get(i);
+            BigDecimal loadFactor = curve.getLoadFactor();
+            if (loadFactor == null || !weightFactorsMap.containsKey(loadFactor)) {
+                log.warn("负荷因子 {} 未找到对应的加权系数，跳过", loadFactor);
+                continue;
+            }
+
+            BigDecimal weight = weightFactorsMap.get(loadFactor);
             sumWeightedSFOC = sumWeightedSFOC.add(weight.divide(bsfc, 10, RoundingMode.HALF_UP));
         }
 
@@ -443,6 +453,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                 .divide(BigDecimal.valueOf(engineInfo.getCylinderCount()), 2, RoundingMode.HALF_UP);
 
         List<EngineEfficiency> baseValueRecords = findBaseValues(
+                device,
                 engineInfo.getEmissionStandard(),
                 singleCylinderPower
         );
@@ -463,7 +474,6 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         result.setEfficiencyIndex(efficiencyIndex);
         result.setEfficiencyLevel(efficiencyLevel);
         result.setBaseValue(baseValueRecord.getBaseValue());
-        result.setLevelDescription("能效等级 " + efficiencyLevel + " 级");
         result.setPassed(efficiencyLevel <= 2);
 
         log.info("评估完成: engineId={}, 能效指标={}, 能效等级={}级, 基值={}, 单缸功率={}",
@@ -484,12 +494,11 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         result.setEfficiencyIndex(engineInfo.getEfficiencyIndex());
         result.setEfficiencyLevel(engineInfo.getEfficiencyLevel());
         result.setBaseValue(engineInfo.getEfficiencyBaseValue());
-        result.setLevelDescription("能效等级 " + engineInfo.getEfficiencyLevel() + " 级");
         result.setPassed(engineInfo.getEfficiencyLevel() <= 2);
         return result;
     }
 
-    private List<BigDecimal> getWeightFactors(String engineUsage) {
+    private Map<BigDecimal, BigDecimal> getWeightFactors(String engineUsage) {
         if (engineUsage == null) {
             throw new IllegalArgumentException("发动机用途不能为空");
         }
@@ -507,21 +516,48 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             throw new IllegalArgumentException("未找到试验循环 " + cycleCode + " 的加权系数数据");
         }
 
-        List<BigDecimal> weightFactors = new ArrayList<>();
+        Map<BigDecimal, BigDecimal> weightFactorsMap = new HashMap<>();
         for (TestCycle cycle : testCycles) {
-            weightFactors.add(cycle.getWeightCoefficient());
+            String powerMode = cycle.getPowerMode();
+            BigDecimal weightCoefficient = cycle.getWeightCoefficient();
+
+            if (powerMode != null && weightCoefficient != null) {
+                BigDecimal loadFactor = parsePowerModeToBigDecimal(powerMode);
+                if (loadFactor != null) {
+                    weightFactorsMap.put(loadFactor, weightCoefficient);
+                }
+            }
         }
 
         log.info("查询试验循环: cycleCode={}, cycleName={}, 加权系数数量={}",
-                cycleCode, testCycles.get(0).getCycleName(), weightFactors.size());
+                cycleCode, testCycles.get(0).getCycleName(), weightFactorsMap.size());
 
-        return weightFactors;
+        return weightFactorsMap;
+    }
+
+    private BigDecimal parsePowerModeToBigDecimal(String powerMode) {
+        if (powerMode == null || powerMode.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            String mode = powerMode.trim();
+            if (mode.endsWith("%")) {
+                String numberPart = mode.substring(0, mode.length() - 1);
+                return new BigDecimal(numberPart).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+            } else {
+                return new BigDecimal(mode);
+            }
+        } catch (NumberFormatException e) {
+            log.warn("无法解析功率模式: {}", powerMode);
+            return null;
+        }
     }
 
     private String determineCycleCode(String engineUsage) {
         if (engineUsage.contains("恒速") && (engineUsage.contains("主机") || engineUsage.contains("电力推进"))) {
             return "E2";
-        } else if (engineUsage.contains("按推进特性") || engineUsage.contains("推进特性")) {
+        } else if (engineUsage.contains("推进")) {
             return "E3";
         } else if (engineUsage.contains("恒速") && engineUsage.contains("辅机")) {
             return "D2";
@@ -531,8 +567,9 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
     }
 
-    private List<EngineEfficiency> findBaseValues(String emissionStandard, BigDecimal singleCylinderPower) {
+    private List<EngineEfficiency> findBaseValues(Device device, String emissionStandard, BigDecimal singleCylinderPower) {
         LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(EngineEfficiency::getEngineType, device.getCode());
         wrapper.eq(EngineEfficiency::getEmissionLevel, emissionStandard)
                 .eq(EngineEfficiency::getIsDeleted, 0);
 

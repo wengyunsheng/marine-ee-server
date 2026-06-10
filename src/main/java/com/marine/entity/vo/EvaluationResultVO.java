@@ -26,11 +26,6 @@ public class EvaluationResultVO implements Serializable {
     private BigDecimal baseValue;
 
     /**
-     * 等级描述
-     */
-    private String levelDescription;
-
-    /**
      * 是否通过
      */
     private boolean passed;

@@ -22,6 +22,12 @@ public class EngineInfo implements Serializable {
     private Long id;
 
     /**
+     * 设备id
+     */
+    @TableField("device_id")
+    private Long deviceId;
+
+    /**
      * 品牌
      */
     @TableField("brand")
