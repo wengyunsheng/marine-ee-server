@@ -21,7 +21,7 @@ mybatis-plus:
 
 file:
   upload:
-    path: D:/uploads/3d-models/
+    path: D:\uploads\3d-models\
     allowed-types: obj,fbx,gltf,glb,stl
     max-size: 104857600
 

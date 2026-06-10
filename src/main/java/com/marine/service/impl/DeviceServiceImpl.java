@@ -11,7 +11,9 @@ import com.marine.mapper.DeviceMapper;
 import com.marine.service.DeviceService;
 import com.marine.service.FileInfoService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,6 +26,9 @@ import java.util.stream.Collectors;
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements DeviceService {
 
     private final FileInfoService fileInfoService;
+
+    @Value("${file.upload.path}")
+    private String basePath;
 
     @Override
     public List<DeviceTreeVO> getDeviceTree(DeviceQueryDTO queryDTO) {
@@ -196,7 +201,11 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         for (Device device : devices) {
             DeviceTreeVO dto = new DeviceTreeVO();
             BeanUtils.copyProperties(device, dto);
-            dto.setModelFilePath(fileInfoMap.get(device.getModelFileId()));
+            String filePath = fileInfoMap.get(device.getModelFileId());
+            if (StringUtils.isNotBlank(filePath)) {
+                String fileUrl = "/uploads/" + filePath.replace(basePath, "").replace("\\", "/");
+                dto.setModelFileUrl(fileUrl);
+            }
             treeList.add(dto);
         }
 

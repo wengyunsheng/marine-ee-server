@@ -9,6 +9,7 @@ import com.marine.service.FileUploadService;
 import com.marine.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +27,9 @@ public class FileUploadServiceImpl implements FileUploadService {
     private final DeviceMapper deviceMapper;
 
     private final FileInfoService fileInfoService;
+
+    @Value("${file.upload.path}")
+    private String basePath;
 
     @Override
     @Transactional
@@ -46,6 +50,8 @@ public class FileUploadServiceImpl implements FileUploadService {
             String filePath = fileUploadUtil.upload(file);
             String fileName = file.getOriginalFilename();
             String fileType = getFileExtension(fileName);
+            String fileUrl = "/uploads/" + filePath.replace(basePath, "").replace("\\", "/");
+
 
             FileInfo fileInfo = new FileInfo();
             fileInfo.setFileName(fileName);
@@ -64,6 +70,7 @@ public class FileUploadServiceImpl implements FileUploadService {
             result.setFilePath(filePath);
             result.setFileType(fileType);
             result.setFileSize(file.getSize());
+            result.setFileUrl(fileUrl);
 
             log.info("设备 {} 的3D模型上传成功，文件ID: {}", deviceId, fileInfo.getId());
             return result;

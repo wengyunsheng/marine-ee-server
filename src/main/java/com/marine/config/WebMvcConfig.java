@@ -19,7 +19,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
         if (!uploadPath.endsWith("/")) {
             uploadPath += "/";
         }
-        registry.addResourceHandler("/files/**")
+        registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:" + uploadPath);
     }
 }

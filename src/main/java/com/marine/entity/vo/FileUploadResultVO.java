@@ -20,9 +20,14 @@ public class FileUploadResultVO implements Serializable {
     private String fileName;
 
     /**
-     * 文件路径
+     * 文件绝对路径
      */
     private String filePath;
+
+    /**
+     * 文件静态路径
+     */
+    private String fileUrl;
 
     /**
      * 文件类型

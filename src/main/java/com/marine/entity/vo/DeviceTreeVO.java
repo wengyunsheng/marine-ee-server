@@ -1,10 +1,8 @@
 package com.marine.entity.vo;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -33,9 +31,9 @@ public class DeviceTreeVO implements Serializable {
     private String name;
 
     /**
-     * 模型文件存储路径
+     * 模型文件静态路径
      */
-    private String modelFilePath;
+    private String modelFileUrl;
 
     /**
      * 子设备列表
