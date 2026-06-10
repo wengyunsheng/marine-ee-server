@@ -208,23 +208,22 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         double[] loadFactors = {0.25, 0.5, 0.75, 1.0};
 
         for (int i = 0; i < loadFactors.length; i++) {
-            int colOffset = startCol + i * 4;  // 每组4列
+            int colOffset = startCol + i * 6;  // 每组6列
 
             BigDecimal power = getCellValueAsBigDecimal(row.getCell(colOffset));
-            if (power == null) continue;  // 无数据则跳过
-
             BigDecimal speed = getCellValueAsBigDecimal(row.getCell(colOffset + 1));
             BigDecimal bsfc = getCellValueAsBigDecimal(row.getCell(colOffset + 2));
-            BigDecimal bsec = getCellValueAsBigDecimal(row.getCell(colOffset + 3));
+            BigDecimal bspc = getCellValueAsBigDecimal(row.getCell(colOffset + 3));
+            BigDecimal bsgc = getCellValueAsBigDecimal(row.getCell(colOffset + 4));
+            BigDecimal bsec = getCellValueAsBigDecimal(row.getCell(colOffset + 5));
 
             EngineImportDTO.PerformanceCurveDTO curve = new EngineImportDTO.PerformanceCurveDTO();
             curve.setLoadFactor(BigDecimal.valueOf(loadFactors[i]));
             curve.setPower(power);
             curve.setSpeed(speed);
             curve.setBsfc(bsfc);
-            // 其他字段可能没有数据，设为0或null
-            curve.setBspc(BigDecimal.ZERO);
-            curve.setBsgc(BigDecimal.ZERO);
+            curve.setBspc(bspc);
+            curve.setBsgc(bsgc);
             curve.setBsec(bsec);
 
             curves.add(curve);
@@ -428,12 +427,11 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
         Map<BigDecimal, BigDecimal> weightFactorsMap = getWeightFactors(engineInfo.getEngineUsage());
 
-        BigDecimal sumWeightedSFOC = BigDecimal.ZERO;
+        BigDecimal sumWeighted = BigDecimal.ZERO;
         for (EnginePerformanceCurve curve : curves) {
-            BigDecimal bsfc = curve.getBsfc();
-            if (bsfc == null || bsfc.compareTo(BigDecimal.ZERO) == 0) {
-                continue;
-            }
+            BigDecimal bsfc = Optional.ofNullable(curve.getBsfc()).orElse(BigDecimal.ZERO);
+            BigDecimal bspc = Optional.ofNullable(curve.getBspc()).orElse(BigDecimal.ZERO);
+            BigDecimal bsgc = Optional.ofNullable(curve.getBsgc()).orElse(BigDecimal.ZERO);
 
             BigDecimal loadFactor = curve.getLoadFactor();
             if (loadFactor == null || !weightFactorsMap.containsKey(loadFactor)) {
@@ -442,11 +440,40 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             }
 
             BigDecimal weight = weightFactorsMap.get(loadFactor);
-            sumWeightedSFOC = sumWeightedSFOC.add(weight.divide(bsfc, 10, RoundingMode.HALF_UP));
+
+            if ("engine-01".equals(device.getCode()) || "engine-02".equals(device.getCode())) {
+                if (bsfc.compareTo(BigDecimal.ZERO) == 0) {
+                    continue;
+                }
+                sumWeighted = sumWeighted.add(weight.divide(bsfc, 10, RoundingMode.HALF_UP));
+            } else if ("engine-03".equals(device.getCode()) || "engine-04".equals(device.getCode())) {
+                bsgc = bsgc.multiply(BigDecimal.valueOf(50000));
+                bspc = bspc.multiply(BigDecimal.valueOf(42700));
+                BigDecimal add = bsgc.add(bspc);
+                if (add.compareTo(BigDecimal.ZERO) == 0) {
+                    continue;
+                }
+                sumWeighted = sumWeighted.add(weight.divide(add, 10, RoundingMode.HALF_UP));
+            } else if ("engine-05".equals(device.getCode()) || "engine-06".equals(device.getCode())) {
+                bsgc = bsgc.multiply(BigDecimal.valueOf(19900));
+                bspc = bspc.multiply(BigDecimal.valueOf(42700));
+                BigDecimal add = bsgc.add(bspc);
+                if (add.compareTo(BigDecimal.ZERO) == 0) {
+                    continue;
+                }
+                sumWeighted = sumWeighted.add(weight.divide(add, 10, RoundingMode.HALF_UP));
+            }
         }
 
-        BigDecimal efficiencyIndex = BigDecimal.valueOf(84.309133)
-                .multiply(sumWeightedSFOC)
+        BigDecimal indexMultiplier = BigDecimal.ZERO;
+        if ("engine-01".equals(device.getCode()) || "engine-02".equals(device.getCode())) {
+            indexMultiplier = BigDecimal.valueOf(84.309133);
+        } else if ("engine-03".equals(device.getCode()) || "engine-04".equals(device.getCode())
+                || "engine-05".equals(device.getCode()) || "engine-06".equals(device.getCode())) {
+            indexMultiplier = BigDecimal.valueOf(3600000);
+        }
+        BigDecimal efficiencyIndex = indexMultiplier.multiply(sumWeighted)
+                .multiply(BigDecimal.valueOf(100))
                 .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal singleCylinderPower = BigDecimal.valueOf(engineInfo.getRatedPower())

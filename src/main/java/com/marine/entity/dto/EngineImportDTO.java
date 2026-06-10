@@ -157,22 +157,22 @@ public class EngineImportDTO implements Serializable {
         private BigDecimal speed;
 
         /**
-         * 燃油消耗率
+         * 燃油消耗率 BSFC / SFOC
          */
         private BigDecimal bsfc;
 
         /**
-         * 燃油消耗率
+         * 燃油消耗率 BSPC
          */
         private BigDecimal bspc;
 
         /**
-         * 燃气消耗率
+         * 燃气消耗率 BSGC
          */
         private BigDecimal bsgc;
 
         /**
-         * 能量消耗率
+         * 能量消耗率 BSEC
          */
         private BigDecimal bsec;
     }
