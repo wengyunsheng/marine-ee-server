@@ -8,18 +8,7 @@
         <result column="file_path" property="filePath"/>
         <result column="file_type" property="fileType"/>
         <result column="file_size" property="fileSize"/>
-        <result column="file_url" property="fileUrl"/>
-        <result column="business_type" property="businessType"/>
-        <result column="business_id" property="businessId"/>
-        <result column="is_deleted" property="isDeleted"/>
         <result column="create_time" property="createTime"/>
-        <result column="update_time" property="updateTime"/>
     </resultMap>
-
-    <update id="logicDeleteById">
-        UPDATE file_info
-        SET is_deleted = 1
-        WHERE id = #{id}
-    </update>
 
 </mapper>

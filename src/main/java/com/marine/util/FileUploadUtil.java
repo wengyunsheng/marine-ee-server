@@ -55,17 +55,6 @@ public class FileUploadUtil {
         return path.toString();
     }
 
-    public void deleteFile(String filePath) {
-        if (filePath == null || filePath.isEmpty()) {
-            return;
-        }
-        File file = new File(filePath);
-        if (file.exists()) {
-            file.delete();
-            log.info("文件删除成功: {}", filePath);
-        }
-    }
-
     private String getFileExtension(String fileName) {
         if (fileName == null || !fileName.contains(".")) {
             return "";

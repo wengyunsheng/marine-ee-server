@@ -428,6 +428,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         Map<BigDecimal, BigDecimal> weightFactorsMap = getWeightFactors(engineInfo.getEngineUsage());
 
         BigDecimal sumWeighted = BigDecimal.ZERO;
+        String deviceCode = device.getCode();
         for (EnginePerformanceCurve curve : curves) {
             BigDecimal bsfc = Optional.ofNullable(curve.getBsfc()).orElse(BigDecimal.ZERO);
             BigDecimal bspc = Optional.ofNullable(curve.getBspc()).orElse(BigDecimal.ZERO);
@@ -441,12 +442,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
             BigDecimal weight = weightFactorsMap.get(loadFactor);
 
-            if ("engine-01".equals(device.getCode()) || "engine-02".equals(device.getCode())) {
+            if ("engine-01".equals(deviceCode) || "engine-02".equals(deviceCode)) {
                 if (bsfc.compareTo(BigDecimal.ZERO) == 0) {
                     continue;
                 }
                 sumWeighted = sumWeighted.add(weight.divide(bsfc, 10, RoundingMode.HALF_UP));
-            } else if ("engine-03".equals(device.getCode()) || "engine-04".equals(device.getCode())) {
+            } else if ("engine-03".equals(deviceCode) || "engine-04".equals(deviceCode)) {
                 bsgc = bsgc.multiply(BigDecimal.valueOf(50000));
                 bspc = bspc.multiply(BigDecimal.valueOf(42700));
                 BigDecimal add = bsgc.add(bspc);
@@ -454,7 +455,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                     continue;
                 }
                 sumWeighted = sumWeighted.add(weight.divide(add, 10, RoundingMode.HALF_UP));
-            } else if ("engine-05".equals(device.getCode()) || "engine-06".equals(device.getCode())) {
+            } else if ("engine-05".equals(deviceCode) || "engine-06".equals(deviceCode)) {
                 bsgc = bsgc.multiply(BigDecimal.valueOf(19900));
                 bspc = bspc.multiply(BigDecimal.valueOf(42700));
                 BigDecimal add = bsgc.add(bspc);
@@ -466,10 +467,10 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
 
         BigDecimal indexMultiplier = BigDecimal.ZERO;
-        if ("engine-01".equals(device.getCode()) || "engine-02".equals(device.getCode())) {
+        if ("engine-01".equals(deviceCode) || "engine-02".equals(deviceCode)) {
             indexMultiplier = BigDecimal.valueOf(84.309133);
-        } else if ("engine-03".equals(device.getCode()) || "engine-04".equals(device.getCode())
-                || "engine-05".equals(device.getCode()) || "engine-06".equals(device.getCode())) {
+        } else if ("engine-03".equals(deviceCode) || "engine-04".equals(deviceCode)
+                || "engine-05".equals(deviceCode) || "engine-06".equals(deviceCode)) {
             indexMultiplier = BigDecimal.valueOf(3600000);
         }
         BigDecimal efficiencyIndex = indexMultiplier.multiply(sumWeighted)
@@ -480,7 +481,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                 .divide(BigDecimal.valueOf(engineInfo.getCylinderCount()), 2, RoundingMode.HALF_UP);
 
         List<EngineEfficiency> baseValueRecords = findBaseValues(
-                device,
+                deviceCode,
                 engineInfo.getEmissionStandard(),
                 singleCylinderPower
         );
@@ -594,9 +595,9 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
     }
 
-    private List<EngineEfficiency> findBaseValues(Device device, String emissionStandard, BigDecimal singleCylinderPower) {
+    private List<EngineEfficiency> findBaseValues(String deviceCode, String emissionStandard, BigDecimal singleCylinderPower) {
         LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EngineEfficiency::getEngineType, device.getCode());
+        wrapper.eq(EngineEfficiency::getEngineType, deviceCode);
         wrapper.eq(EngineEfficiency::getEmissionLevel, emissionStandard)
                 .eq(EngineEfficiency::getIsDeleted, 0);
 

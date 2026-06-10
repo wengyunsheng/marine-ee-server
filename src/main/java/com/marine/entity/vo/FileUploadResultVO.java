@@ -34,8 +34,4 @@ public class FileUploadResultVO implements Serializable {
      */
     private Long fileSize;
 
-    /**
-     * 文件访问URL
-     */
-    private String fileUrl;
 }

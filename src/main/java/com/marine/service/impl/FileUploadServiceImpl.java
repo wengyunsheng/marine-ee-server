@@ -9,7 +9,6 @@ import com.marine.service.FileUploadService;
 import com.marine.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,9 +27,6 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     private final FileInfoService fileInfoService;
 
-    @Value("${file.upload.path}")
-    private String basePath;
-
     @Override
     @Transactional
     public FileUploadResultVO upload3DModel(MultipartFile file, Long deviceId) {
@@ -44,28 +40,16 @@ public class FileUploadServiceImpl implements FileUploadService {
                 throw new IllegalArgumentException("只有父设备才能上传3D模型");
             }
 
-            FileInfo oldFile = fileInfoService.getByBusinessId("3d_model", deviceId);
-            if (oldFile != null) {
-                fileUploadUtil.deleteFile(oldFile.getFilePath());
-                fileInfoService.logicDeleteById(oldFile.getId());
-            }
-
             String filePath = fileUploadUtil.upload(file);
             String fileName = file.getOriginalFilename();
             String fileType = getFileExtension(fileName);
-            String fileUrl = "/files/" + filePath.replace(basePath, "").replace("\\", "/");
 
             FileInfo fileInfo = new FileInfo();
             fileInfo.setFileName(fileName);
             fileInfo.setFilePath(filePath);
             fileInfo.setFileType(fileType);
             fileInfo.setFileSize(file.getSize());
-            fileInfo.setFileUrl(fileUrl);
-            fileInfo.setBusinessType("3d_model");
-            fileInfo.setBusinessId(deviceId);
-            fileInfo.setIsDeleted(0);
             fileInfo.setCreateTime(LocalDateTime.now());
-            fileInfo.setUpdateTime(LocalDateTime.now());
             fileInfoService.save(fileInfo);
 
             device.setModelFileId(fileInfo.getId());
@@ -77,7 +61,6 @@ public class FileUploadServiceImpl implements FileUploadService {
             result.setFilePath(filePath);
             result.setFileType(fileType);
             result.setFileSize(file.getSize());
-            result.setFileUrl(fileUrl);
 
             log.info("设备 {} 的3D模型上传成功，文件ID: {}", deviceId, fileInfo.getId());
             return result;

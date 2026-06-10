@@ -44,40 +44,10 @@ public class FileInfo implements Serializable {
     private Long fileSize;
 
     /**
-     * 文件访问URL
-     */
-    @TableField("file_url")
-    private String fileUrl;
-
-    /**
-     * 业务类型
-     */
-    @TableField("business_type")
-    private String businessType;
-
-    /**
-     * 业务ID
-     */
-    @TableField("business_id")
-    private Long businessId;
-
-    /**
-     * 是否删除（0-未删除，1-已删除）
-     */
-    @TableField("is_deleted")
-    private Integer isDeleted;
-
-    /**
      * 创建时间
      */
     @TableField("create_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
 
-    /**
-     * 更新时间
-     */
-    @TableField("update_time")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime updateTime;
 }
