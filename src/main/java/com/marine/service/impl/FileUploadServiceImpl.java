@@ -40,6 +40,9 @@ public class FileUploadServiceImpl implements FileUploadService {
                 throw new IllegalArgumentException("只有父设备才能上传3D模型");
             }
 
+            // 删除旧文件
+            fileInfoService.removeById(device.getModelFileId());
+
             String filePath = fileUploadUtil.upload(file);
             String fileName = file.getOriginalFilename();
             String fileType = getFileExtension(fileName);

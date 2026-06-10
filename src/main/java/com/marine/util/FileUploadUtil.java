@@ -14,7 +14,6 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.UUID;
 
 @Slf4j
 @Component
@@ -40,7 +39,6 @@ public class FileUploadUtil {
         }
 
         String datePath = new SimpleDateFormat("yyyy/MM/dd").format(new Date());
-        String fileName = UUID.randomUUID().toString().replace("-", "") + "." + fileType;
         String uploadPath = fileUploadConfig.getPath() + datePath + "/";
 
         File dir = new File(uploadPath);
@@ -48,7 +46,7 @@ public class FileUploadUtil {
             dir.mkdirs();
         }
 
-        Path path = Paths.get(uploadPath + fileName);
+        Path path = Paths.get(uploadPath + originalFileName);
         Files.write(path, file.getBytes());
 
         log.info("文件上传成功: {}", path);

@@ -3,11 +3,14 @@ package com.marine.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.marine.entity.Device;
+import com.marine.entity.FileInfo;
 import com.marine.entity.vo.DeviceOptionVO;
 import com.marine.entity.dto.DeviceQueryDTO;
 import com.marine.entity.vo.DeviceTreeVO;
 import com.marine.mapper.DeviceMapper;
 import com.marine.service.DeviceService;
+import com.marine.service.FileInfoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
@@ -16,8 +19,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@RequiredArgsConstructor
 @Service
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements DeviceService {
+
+    private final FileInfoService fileInfoService;
 
     @Override
     public List<DeviceTreeVO> getDeviceTree(DeviceQueryDTO queryDTO) {
@@ -92,7 +98,15 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         }
 
         List<Device> allDevices = baseMapper.selectList(wrapper);
-        return buildTree(allDevices);
+
+        // 获取上传3D模型信息
+        List<Long> fileInfoIds = allDevices.stream()
+                .map(Device::getModelFileId)
+                .collect(Collectors.toList());
+        List<FileInfo> fileInfos = fileInfoService.listByIds(fileInfoIds);
+        Map<Long, String> fileInfoMap = fileInfos.stream()
+                .collect(Collectors.toMap(FileInfo::getId, FileInfo::getFilePath));
+        return buildTree(fileInfoMap, allDevices);
     }
 
     @Override
@@ -176,12 +190,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         return false;
     }
 
-    private List<DeviceTreeVO> buildTree(List<Device> devices) {
+    private List<DeviceTreeVO> buildTree(Map<Long, String> fileInfoMap, List<Device> devices) {
         List<DeviceTreeVO> treeList = new ArrayList<>();
 
         for (Device device : devices) {
             DeviceTreeVO dto = new DeviceTreeVO();
             BeanUtils.copyProperties(device, dto);
+            dto.setModelFilePath(fileInfoMap.get(device.getModelFileId()));
             treeList.add(dto);
         }
 
