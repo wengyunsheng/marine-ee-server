@@ -6,6 +6,7 @@ import com.marine.entity.vo.EvaluationResultVO;
 import com.marine.entity.vo.ResultVO;
 import com.marine.service.EngineDataService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -39,7 +40,7 @@ public class EngineDataController {
             }
 
             String fileName = file.getOriginalFilename();
-            if (fileName == null || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
+            if (StringUtils.isBlank(fileName) || (!fileName.endsWith(".xlsx") && !fileName.endsWith(".xls"))) {
                 return ResultVO.error("仅支持 Excel 文件（.xlsx 或 .xls）");
             }
 
@@ -54,9 +55,6 @@ public class EngineDataController {
      * 查询发动机列表
      *
      * @param queryDTO 查询条件
-     *                 - brand: 品牌（可选，模糊查询）
-     *                 - model: 型号（可选，模糊查询）
-     *                 - emissionStandard: 排放标准（可选，精确匹配）
      * @return 发动机信息列表
      */
     @PostMapping("/list")
@@ -89,7 +87,7 @@ public class EngineDataController {
      * 完成发动机能效评估计算
      *
      * @param engineId 发动机ID
-     * @return 能效评估结果，包含能效指数、能效等级、基准值等信息
+     * @return 能效评估结果
      */
     @PostMapping("/evaluate/{engineId}")
     public ResultVO<EvaluationResultVO> completeEvaluation(@PathVariable Long engineId) {

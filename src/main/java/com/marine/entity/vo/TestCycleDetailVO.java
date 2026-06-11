@@ -6,6 +6,12 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * 测试循环详情视图对象
+ *
+ * @author admin
+ * @since 2026-06-02
+ */
 @Data
 public class TestCycleDetailVO implements Serializable {
 
@@ -26,6 +32,9 @@ public class TestCycleDetailVO implements Serializable {
      */
     private List<ConditionDTO> conditions;
 
+    /**
+     * 工况内部类
+     */
     @Data
     public static class ConditionDTO implements Serializable {
 

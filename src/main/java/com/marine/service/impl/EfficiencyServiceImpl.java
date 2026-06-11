@@ -5,6 +5,7 @@ import com.marine.entity.*;
 import com.marine.mapper.*;
 import com.marine.service.EfficiencyService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -96,13 +97,9 @@ public class EfficiencyServiceImpl implements EfficiencyService {
     @Override
     public List<EngineEfficiency> getEngineList(String engineType) {
         LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EngineEfficiency::getIsDeleted, 0);
-
-        if (engineType != null && !engineType.trim().isEmpty()) {
-            wrapper.eq(EngineEfficiency::getEngineType, engineType);
-        }
-
-        wrapper.orderByAsc(EngineEfficiency::getEmissionLevel)
+        wrapper.eq(EngineEfficiency::getIsDeleted, 0)
+                .eq(StringUtils.isNotBlank(engineType), EngineEfficiency::getEngineType, engineType)
+                .orderByAsc(EngineEfficiency::getEmissionLevel)
                 .orderByAsc(EngineEfficiency::getPowerRangeMin)
                 .orderByAsc(EngineEfficiency::getPowerRangeMax)
                 .orderByAsc(EngineEfficiency::getEfficiencyLevel);
@@ -112,13 +109,9 @@ public class EfficiencyServiceImpl implements EfficiencyService {
     @Override
     public List<GeneratorEfficiency> getGeneratorList(String generatorType) {
         LambdaQueryWrapper<GeneratorEfficiency> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(GeneratorEfficiency::getIsDeleted, 0);
-
-        if (generatorType != null && !generatorType.trim().isEmpty()) {
-            wrapper.eq(GeneratorEfficiency::getGeneratorType, generatorType);
-        }
-
-        wrapper.orderByAsc(GeneratorEfficiency::getRatedCapacity)
+        wrapper.eq(GeneratorEfficiency::getIsDeleted, 0)
+                .eq(StringUtils.isNotBlank(generatorType), GeneratorEfficiency::getGeneratorType, generatorType)
+                .orderByAsc(GeneratorEfficiency::getRatedCapacity)
                 .orderByAsc(GeneratorEfficiency::getRatedPower)
                 .orderByAsc(GeneratorEfficiency::getRotorPoles)
                 .orderByAsc(GeneratorEfficiency::getEfficiencyLevel);
@@ -128,13 +121,9 @@ public class EfficiencyServiceImpl implements EfficiencyService {
     @Override
     public List<IncineratorEfficiency> getIncineratorList(String incineratorType) {
         LambdaQueryWrapper<IncineratorEfficiency> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(IncineratorEfficiency::getIsDeleted, 0);
-
-        if (incineratorType != null && !incineratorType.trim().isEmpty()) {
-            wrapper.eq(IncineratorEfficiency::getIncineratorType, incineratorType);
-        }
-
-        wrapper.orderByAsc(IncineratorEfficiency::getEfficiencyLevel);
+        wrapper.eq(IncineratorEfficiency::getIsDeleted, 0)
+                .eq(StringUtils.isNotBlank(incineratorType), IncineratorEfficiency::getIncineratorType, incineratorType)
+                .orderByAsc(IncineratorEfficiency::getEfficiencyLevel);
         return incineratorEfficiencyMapper.selectList(wrapper);
     }
 
@@ -172,13 +161,9 @@ public class EfficiencyServiceImpl implements EfficiencyService {
     @Override
     public List<WindlassEfficiency> getWindlassList(String windlassType) {
         LambdaQueryWrapper<WindlassEfficiency> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(WindlassEfficiency::getIsDeleted, 0);
-
-        if (windlassType != null && !windlassType.trim().isEmpty()) {
-            wrapper.eq(WindlassEfficiency::getWindlassType, windlassType);
-        }
-
-        wrapper.orderByAsc(WindlassEfficiency::getEfficiencyLevel);
+        wrapper.eq(WindlassEfficiency::getIsDeleted, 0)
+                .eq(StringUtils.isNotBlank(windlassType), WindlassEfficiency::getWindlassType, windlassType)
+                .orderByAsc(WindlassEfficiency::getEfficiencyLevel);
         return windlassEfficiencyMapper.selectList(wrapper);
     }
 }

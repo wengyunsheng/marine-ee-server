@@ -4,13 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.marine.entity.Device;
 import com.marine.entity.FileInfo;
-import com.marine.entity.vo.DeviceOptionVO;
 import com.marine.entity.dto.DeviceQueryDTO;
+import com.marine.entity.vo.DeviceOptionVO;
 import com.marine.entity.vo.DeviceTreeVO;
 import com.marine.mapper.DeviceMapper;
 import com.marine.service.DeviceService;
 import com.marine.service.FileInfoService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -36,8 +37,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         wrapper.eq(Device::getIsDeleted, 0)
                 .orderByAsc(Device::getId);
 
-        boolean hasNameFilter = queryDTO != null && queryDTO.getName() != null && !queryDTO.getName().trim().isEmpty();
-        boolean hasParentFilter = queryDTO != null && queryDTO.getParentCode() != null && !queryDTO.getParentCode().trim().isEmpty();
+        boolean hasNameFilter = queryDTO != null && StringUtils.isNotBlank(queryDTO.getName());
+        boolean hasParentFilter = queryDTO != null && StringUtils.isNotBlank(queryDTO.getParentCode());
 
         if (hasParentFilter) {
             Device parentDevice = baseMapper.selectOne(new LambdaQueryWrapper<Device>()
@@ -60,7 +61,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
             List<Device> childDevices = baseMapper.selectList(childWrapper);
 
-            if (childDevices.isEmpty()) {
+            if (CollectionUtils.isEmpty(childDevices)) {
                 return new ArrayList<>();
             }
 
@@ -74,20 +75,20 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         if (hasNameFilter) {
             List<Device> matchedDevices = baseMapper.selectList(wrapper.clone().like(Device::getName, queryDTO.getName()));
 
-            if (matchedDevices.isEmpty()) {
+            if (CollectionUtils.isEmpty(matchedDevices)) {
                 return new ArrayList<>();
             }
 
             List<String> parentCodes = new ArrayList<>();
             for (Device device : matchedDevices) {
-                if (device.getParentCode() != null && !parentCodes.contains(device.getParentCode())) {
+                if (StringUtils.isNotBlank(device.getParentCode()) && !parentCodes.contains(device.getParentCode())) {
                     parentCodes.add(device.getParentCode());
                 }
             }
 
             List<Device> allDevices = new ArrayList<>(matchedDevices);
 
-            if (!parentCodes.isEmpty()) {
+            if (CollectionUtils.isNotEmpty(parentCodes)) {
                 List<Device> parentDevices = baseMapper.selectList(new LambdaQueryWrapper<Device>()
                         .eq(Device::getIsDeleted, 0)
                         .in(Device::getCode, parentCodes));
@@ -122,6 +123,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 构建设备树形结构（带父设备）
+     *
+     * @param devices      设备列表，包含父设备和子设备
+     * @param parentDevice 指定的父设备对象，作为树的根节点
+     * @return 以指定父设备为根的设备树列表
+     */
     private List<DeviceTreeVO> buildTreeWithParent(List<Device> devices, Device parentDevice) {
         List<DeviceTreeVO> treeList = new ArrayList<>();
 
@@ -132,12 +140,12 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         }
 
         Map<String, List<DeviceTreeVO>> parentMap = treeList.stream()
-                .filter(d -> d.getParentCode() != null)
+                .filter(d -> StringUtils.isNotBlank(d.getParentCode()))
                 .collect(Collectors.groupingBy(DeviceTreeVO::getParentCode));
 
         for (DeviceTreeVO dto : treeList) {
             List<DeviceTreeVO> children = parentMap.get(dto.getCode());
-            if (children != null) {
+            if (CollectionUtils.isNotEmpty(children)) {
                 dto.setChildren(children);
             }
         }
@@ -147,6 +155,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 构建设备树形结构（带名称过滤）
+     *
+     * @param devices    设备列表
+     * @param filterName 过滤关键词，用于匹配设备名称
+     * @return 过滤后的设备树列表，只返回顶层节点（无父设备的节点）
+     */
     private List<DeviceTreeVO> buildTreeWithFilter(List<Device> devices, String filterName) {
         List<DeviceTreeVO> treeList = new ArrayList<>();
 
@@ -157,19 +172,19 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         }
 
         Map<String, List<DeviceTreeVO>> parentMap = treeList.stream()
-                .filter(d -> d.getParentCode() != null)
+                .filter(d -> StringUtils.isNotBlank(d.getParentCode()))
                 .collect(Collectors.groupingBy(DeviceTreeVO::getParentCode));
 
         for (DeviceTreeVO dto : treeList) {
             List<DeviceTreeVO> children = parentMap.get(dto.getCode());
-            if (children != null) {
+            if (CollectionUtils.isNotEmpty(children)) {
                 dto.setChildren(children);
             }
         }
 
         return treeList.stream()
                 .filter(d -> {
-                    if (d.getParentCode() == null) {
+                    if (StringUtils.isBlank(d.getParentCode())) {
                         if (d.getName().contains(filterName)) {
                             return true;
                         }
@@ -180,8 +195,15 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 递归检查节点是否有匹配名称的子节点
+     *
+     * @param node       设备树节点
+     * @param filterName 过滤关键词，用于匹配设备名称
+     * @return true表示存在匹配的子节点，false表示不存在
+     */
     private boolean hasMatchingChild(DeviceTreeVO node, String filterName) {
-        if (node.getChildren() == null || node.getChildren().isEmpty()) {
+        if (CollectionUtils.isEmpty(node.getChildren())) {
             return false;
         }
         for (DeviceTreeVO child : node.getChildren()) {
@@ -195,6 +217,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         return false;
     }
 
+    /**
+     * 构建设备树形结构（完整树）
+     *
+     * @param fileInfoMap 文件信息映射表，key为文件ID，value为文件路径
+     * @param devices     设备列表
+     * @return 设备树列表，只返回顶层节点（无父设备的节点）
+     */
     private List<DeviceTreeVO> buildTree(Map<Long, String> fileInfoMap, List<Device> devices) {
         List<DeviceTreeVO> treeList = new ArrayList<>();
 
@@ -210,18 +239,18 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         }
 
         Map<String, List<DeviceTreeVO>> parentMap = treeList.stream()
-                .filter(d -> d.getParentCode() != null)
+                .filter(d -> StringUtils.isNotBlank(d.getParentCode()))
                 .collect(Collectors.groupingBy(DeviceTreeVO::getParentCode));
 
         for (DeviceTreeVO dto : treeList) {
             List<DeviceTreeVO> children = parentMap.get(dto.getCode());
-            if (children != null) {
+            if (CollectionUtils.isNotEmpty(children)) {
                 dto.setChildren(children);
             }
         }
 
         return treeList.stream()
-                .filter(d -> d.getParentCode() == null)
+                .filter(d -> StringUtils.isBlank(d.getParentCode()))
                 .collect(Collectors.toList());
     }
 }

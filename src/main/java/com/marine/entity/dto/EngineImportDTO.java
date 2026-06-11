@@ -6,6 +6,12 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.List;
 
+/**
+ * 发动机信息导入数据传输对象
+ *
+ * @author admin
+ * @since 2026-06-02
+ */
 @Data
 public class EngineImportDTO implements Serializable {
 
@@ -136,8 +142,11 @@ public class EngineImportDTO implements Serializable {
      */
     private List<PerformanceCurveDTO> performanceCurves;
 
+    /**
+     * 性能曲线内部类
+     */
     @Data
-    public static class PerformanceCurveDTO implements Serializable{
+    public static class PerformanceCurveDTO implements Serializable {
 
         private static final long serialVersionUID = 1L;
 

@@ -13,11 +13,6 @@
         <result column="delete_time" property="deleteTime"/>
     </resultMap>
 
-    <select id="selectByCode" resultMap="BaseResultMap">
-        SELECT * FROM device
-        WHERE code = #{code} AND is_deleted = 0
-    </select>
-
     <select id="selectParentDevices" resultMap="BaseResultMap">
         SELECT * FROM device
         WHERE parent_code IS NULL AND is_deleted = 0

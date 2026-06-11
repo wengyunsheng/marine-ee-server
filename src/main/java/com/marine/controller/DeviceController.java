@@ -1,7 +1,7 @@
 package com.marine.controller;
 
-import com.marine.entity.vo.DeviceOptionVO;
 import com.marine.entity.dto.DeviceQueryDTO;
+import com.marine.entity.vo.DeviceOptionVO;
 import com.marine.entity.vo.DeviceTreeVO;
 import com.marine.entity.vo.ResultVO;
 import com.marine.service.DeviceService;
@@ -40,11 +40,8 @@ public class DeviceController {
 
     /**
      * 获取设备树形结构
-     * 支持按设备名称模糊搜索和按父设备编码筛选
      *
      * @param queryDTO 查询条件
-     *                 - name: 设备名称（可选，模糊查询）
-     *                 - parentCode: 父设备编码（可选，指定后返回该父设备及其所有子孙节点的树）
      * @return 设备树形结构列表
      */
     @PostMapping("/tree")

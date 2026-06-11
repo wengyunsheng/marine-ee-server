@@ -4,7 +4,10 @@ import com.marine.entity.vo.FileUploadResultVO;
 import com.marine.entity.vo.ResultVO;
 import com.marine.service.FileUploadService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
@@ -22,8 +25,6 @@ public class FileUploadController {
 
     /**
      * 上传3D模型文件
-     * 支持格式: OBJ, FBX, GLTF, GLB, STL
-     * 文件大小限制: 100MB
      *
      * @param file     上传的文件
      * @param deviceId 设备ID（父设备）

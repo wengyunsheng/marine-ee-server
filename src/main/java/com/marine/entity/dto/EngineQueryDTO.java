@@ -5,6 +5,12 @@ import lombok.Data;
 import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
+/**
+ * 发动机信息查询数据传输对象
+ *
+ * @author admin
+ * @since 2026-06-02
+ */
 @Data
 public class EngineQueryDTO implements Serializable {
 

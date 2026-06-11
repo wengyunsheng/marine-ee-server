@@ -10,13 +10,14 @@ import com.marine.mapper.*;
 import com.marine.service.EngineDataService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
@@ -31,9 +32,13 @@ import java.util.*;
 public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineInfo> implements EngineDataService {
 
     private final DeviceMapper deviceMapper;
+
     private final EngineTestConditionMapper testConditionMapper;
+
     private final EnginePerformanceCurveMapper performanceCurveMapper;
+
     private final EngineEfficiencyMapper engineEfficiencyMapper;
+
     private final TestCycleMapper testCycleMapper;
 
     @Override
@@ -64,18 +69,31 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
     }
 
+    /**
+     * 根据文件扩展名创建对应的Workbook对象
+     *
+     * @param file        上传的Excel文件
+     * @param inputStream 文件输入流
+     * @return Workbook对象，如果是其他格式则返回null
+     * @throws Exception 创建Workbook失败时抛出异常
+     */
     private Workbook createWorkbook(MultipartFile file, InputStream inputStream) throws Exception {
         String fileName = file.getOriginalFilename();
-        if (fileName != null && fileName.endsWith(".xlsx")) {
+        if (StringUtils.isNotBlank(fileName) && fileName.endsWith(".xlsx")) {
             return new XSSFWorkbook(inputStream);
-        } else if (fileName != null && fileName.endsWith(".xls")) {
+        } else if (StringUtils.isNotBlank(fileName) && fileName.endsWith(".xls")) {
             return new HSSFWorkbook(inputStream);
         }
         return null;
     }
 
     /**
-     * 解析单个Sheet
+     * 解析单个Sheet页中的数据
+     *
+     * @param deviceId   设备ID，用于关联导入的发动机数据
+     * @param sheet      要解析的Excel Sheet对象
+     * @param dataSource 数据来源标识（如"MAN"或"WINGD"），用于区分不同格式的数据
+     * @return 成功导入的记录数
      */
     private int parseSheet(Long deviceId, Sheet sheet, String dataSource) {
         // 找到数据起始行（第一个"序号"所在行，且序号为数字）
@@ -115,11 +133,17 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
     /**
      * 找到数据起始行（第一个序号为数字的行）
+     * 从Sheet的前10行中搜索，找到第一列值为数字的行作为数据起始行
+     *
+     * @param sheet Excel Sheet对象
+     * @return 数据起始行的索引（从0开始），如果未找到则返回-1
      */
     private int findDataStartRow(Sheet sheet) {
         for (int i = 0; i <= Math.min(10, sheet.getLastRowNum()); i++) {
             Row row = sheet.getRow(i);
-            if (row == null) continue;
+            if (row == null) {
+                continue;
+            }
 
             Cell cell = row.getCell(0);
             if (cell != null) {
@@ -133,7 +157,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     }
 
     /**
-     * 解析一行数据
+     * 解析一行Excel数据，转换为EngineImportDTO对象
+     *
+     * @param deviceId   设备ID，用于关联发动机数据
+     * @param row        Excel行对象
+     * @param dataSource 数据来源标识（如"MAN"或"WINGD"），不同来源的数据列位置可能不同
+     * @return 封装好的发动机导入数据传输对象
      */
     private EngineImportDTO parseRow(Long deviceId, Row row, String dataSource) {
         EngineImportDTO dto = new EngineImportDTO();
@@ -183,15 +212,11 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     }
 
     /**
-     * 解析性能曲线
-     * <p>
-     * Excel结构（MAN表）：
-     * 列18-21: 0.25负荷（功率、转速、燃油消耗率、能量消耗率）
-     * 列22-25: 0.5负荷
-     * 列26-29: 0.75负荷
-     * 列30-33: 1.0负荷
-     * <p>
-     * WINGD表类似，但列起始位置不同
+     * 解析性能曲线数据
+     *
+     * @param row        Excel行对象
+     * @param dataSource 数据来源标识（如"MAN"或"WINGD"），决定性能曲线的起始列位置
+     * @return 性能曲线列表，包含4个负荷点的数据
      */
     private List<EngineImportDTO.PerformanceCurveDTO> parsePerformanceCurves(Row row, String dataSource) {
         List<EngineImportDTO.PerformanceCurveDTO> curves = new ArrayList<>();
@@ -263,7 +288,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         Long conditionId = condition.getId();
 
         // 保存性能曲线
-        if (importDTO.getPerformanceCurves() != null && !importDTO.getPerformanceCurves().isEmpty()) {
+        if (CollectionUtils.isNotEmpty(importDTO.getPerformanceCurves())) {
             for (EngineImportDTO.PerformanceCurveDTO curveDTO : importDTO.getPerformanceCurves()) {
                 EnginePerformanceCurve curve = new EnginePerformanceCurve();
                 curve.setEngineId(engineId);
@@ -281,18 +306,26 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
         log.info("导入成功: engineId={}, conditionId={}, curveCount={}",
                 engineId, conditionId,
-                importDTO.getPerformanceCurves() != null ? importDTO.getPerformanceCurves().size() : 0);
+                CollectionUtils.isNotEmpty(importDTO.getPerformanceCurves()) ? importDTO.getPerformanceCurves().size() : 0);
 
         return true;
     }
 
+    /**
+     * 将Excel单元格的值转换为字符串
+     *
+     * @param cell Excel单元格对象
+     * @return 单元格值的字符串表示，如果单元格为空或转换失败则返回null
+     */
     private String getCellValueAsString(Cell cell) {
-        if (cell == null) return null;
+        if (cell == null) {
+            return null;
+        }
         try {
             switch (cell.getCellType()) {
                 case STRING:
                     String value = cell.getStringCellValue();
-                    return value != null && !value.trim().isEmpty() ? value.trim() : null;
+                    return StringUtils.isNotBlank(value) ? value.trim() : null;
                 case NUMERIC:
                     if (DateUtil.isCellDateFormatted(cell)) {
                         return cell.getLocalDateTimeCellValue().toString();
@@ -316,9 +349,17 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
     }
 
+    /**
+     * 将Excel单元格的值转换为整数
+     *
+     * @param cell Excel单元格对象
+     * @return 整数值，如果单元格为空或转换失败则返回null
+     */
     private Integer getCellValueAsInteger(Cell cell) {
         String value = getCellValueAsString(cell);
-        if (value == null) return null;
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
         try {
             return (int) Double.parseDouble(value);
         } catch (NumberFormatException e) {
@@ -326,9 +367,17 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
     }
 
+    /**
+     * 将Excel单元格的值转换为BigDecimal类型
+     *
+     * @param cell Excel单元格对象
+     * @return BigDecimal值，如果单元格为空或转换失败则返回null
+     */
     private BigDecimal getCellValueAsBigDecimal(Cell cell) {
         String value = getCellValueAsString(cell);
-        if (value == null) return null;
+        if (StringUtils.isBlank(value)) {
+            return null;
+        }
         try {
             return new BigDecimal(value);
         } catch (NumberFormatException e) {
@@ -343,13 +392,13 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         if (queryDTO.getDeviceId() != null) {
             wrapper.eq(EngineInfo::getDeviceId, queryDTO.getDeviceId());
         }
-        if (StringUtils.hasText(queryDTO.getBrand())) {
+        if (StringUtils.isNotBlank(queryDTO.getBrand())) {
             wrapper.like(EngineInfo::getBrand, queryDTO.getBrand());
         }
-        if (StringUtils.hasText(queryDTO.getModel())) {
+        if (StringUtils.isNotBlank(queryDTO.getModel())) {
             wrapper.like(EngineInfo::getModel, queryDTO.getModel());
         }
-        if (StringUtils.hasText(queryDTO.getEmissionStandard())) {
+        if (StringUtils.isNotBlank(queryDTO.getEmissionStandard())) {
             wrapper.eq(EngineInfo::getEmissionStandard, queryDTO.getEmissionStandard());
         }
 
@@ -421,7 +470,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                 .orderByAsc(EnginePerformanceCurve::getLoadFactor);
         List<EnginePerformanceCurve> curves = performanceCurveMapper.selectList(curveWrapper);
 
-        if (curves == null || curves.isEmpty()) {
+        if (CollectionUtils.isEmpty(curves)) {
             throw new IllegalArgumentException("发动机性能曲线数据不完整");
         }
 
@@ -486,7 +535,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
                 singleCylinderPower
         );
 
-        if (baseValueRecords == null || baseValueRecords.isEmpty()) {
+        if (CollectionUtils.isEmpty(baseValueRecords)) {
             throw new IllegalArgumentException("未找到匹配的能效基值，排放等级=" + engineInfo.getEmissionStandard()
                     + ", 单缸功率=" + singleCylinderPower);
         }
@@ -526,8 +575,14 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         return result;
     }
 
+    /**
+     * 根据发动机用途获取各负荷点的权重系数
+     *
+     * @param engineUsage 发动机用途描述（如"恒速主机"、"推进"等）
+     * @return 负荷因子与权重系数的映射Map，key为负荷因子，value为权重系数
+     */
     private Map<BigDecimal, BigDecimal> getWeightFactors(String engineUsage) {
-        if (engineUsage == null) {
+        if (StringUtils.isBlank(engineUsage)) {
             throw new IllegalArgumentException("发动机用途不能为空");
         }
 
@@ -540,7 +595,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
         List<TestCycle> testCycles = testCycleMapper.selectList(wrapper);
 
-        if (testCycles == null || testCycles.isEmpty()) {
+        if (CollectionUtils.isEmpty(testCycles)) {
             throw new IllegalArgumentException("未找到试验循环 " + cycleCode + " 的加权系数数据");
         }
 
@@ -549,7 +604,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             String powerMode = cycle.getPowerMode();
             BigDecimal weightCoefficient = cycle.getWeightCoefficient();
 
-            if (powerMode != null && weightCoefficient != null) {
+            if (StringUtils.isNotBlank(powerMode) && weightCoefficient != null) {
                 BigDecimal loadFactor = parsePowerModeToBigDecimal(powerMode);
                 if (loadFactor != null) {
                     weightFactorsMap.put(loadFactor, weightCoefficient);
@@ -563,8 +618,14 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         return weightFactorsMap;
     }
 
+    /**
+     * 将功率模式字符串转换为BigDecimal类型的负荷因子
+     *
+     * @param powerMode 功率模式字符串（如"25%"、"0.25"等）
+     * @return 负荷因子的BigDecimal值，如果转换失败则返回null
+     */
     private BigDecimal parsePowerModeToBigDecimal(String powerMode) {
-        if (powerMode == null || powerMode.trim().isEmpty()) {
+        if (StringUtils.isBlank(powerMode)) {
             return null;
         }
 
@@ -582,6 +643,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
     }
 
+    /**
+     * 根据发动机用途确定试验循环代码
+     *
+     * @param engineUsage 发动机用途描述（如"恒速主机"、"推进辅机"等）
+     * @return 试验循环代码（E2、E3、D2），如果无法识别则默认返回E2
+     */
     private String determineCycleCode(String engineUsage) {
         if (engineUsage.contains("恒速") && (engineUsage.contains("主机") || engineUsage.contains("电力推进"))) {
             return "E2";
@@ -595,6 +662,14 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
     }
 
+    /**
+     * 根据设备编码、排放等级和单缸功率查找能效基值记录
+     *
+     * @param deviceCode          设备编码（如engine-01、engine-02等）
+     * @param emissionStandard    排放等级（如Tier I、Tier II等）
+     * @param singleCylinderPower 单缸功率（额定功率除以缸数）
+     * @return 匹配的能效基值记录列表，按能效等级升序排列；如果未找到则返回null或空列表
+     */
     private List<EngineEfficiency> findBaseValues(String deviceCode, String emissionStandard, BigDecimal singleCylinderPower) {
         LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(EngineEfficiency::getEngineType, deviceCode);
@@ -603,7 +678,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
         List<EngineEfficiency> allRecords = engineEfficiencyMapper.selectList(wrapper);
 
-        if (allRecords == null || allRecords.isEmpty()) {
+        if (CollectionUtils.isEmpty(allRecords)) {
             return null;
         }
 
@@ -632,8 +707,15 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         return matchedRecords;
     }
 
+    /**
+     * 根据能效指标和基值记录确定能效等级
+     *
+     * @param efficiencyIndex 计算得到的能效指标
+     * @param baseValues      能效基值记录列表，按能效等级升序排列
+     * @return 确定的能效等级（1-5级，数字越小表示能效越高）
+     */
     private int determineEfficiencyLevel(BigDecimal efficiencyIndex, List<EngineEfficiency> baseValues) {
-        if (baseValues == null || baseValues.isEmpty()) {
+        if (CollectionUtils.isEmpty(baseValues)) {
             throw new IllegalArgumentException("未找到匹配的能效基值");
         }
 

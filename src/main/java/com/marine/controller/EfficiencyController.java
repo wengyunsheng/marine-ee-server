@@ -26,7 +26,6 @@ public class EfficiencyController {
 
     /**
      * 查询船用发动机能效等级列表
-     * 支持按发动机类型筛选
      *
      * @param engineType 发动机类型
      * @return 能效等级列表

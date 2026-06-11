@@ -5,6 +5,12 @@ import lombok.Data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+/**
+ * 能效评估结果视图对象
+ *
+ * @author admin
+ * @since 2026-06-02
+ */
 @Data
 public class EvaluationResultVO implements Serializable {
 

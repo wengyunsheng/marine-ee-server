@@ -5,6 +5,12 @@ import lombok.Data;
 import java.io.Serializable;
 import java.util.List;
 
+/**
+ * 设备树视图对象
+ *
+ * @author admin
+ * @since 2026-06-02
+ */
 @Data
 public class DeviceTreeVO implements Serializable {
 

@@ -4,6 +4,12 @@ import lombok.Data;
 
 import java.io.Serializable;
 
+/**
+ * 文件上传结果视图对象
+ *
+ * @author admin
+ * @since 2026-06-02
+ */
 @Data
 public class FileUploadResultVO implements Serializable {
 

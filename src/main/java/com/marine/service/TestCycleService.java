@@ -8,6 +8,11 @@ import java.util.List;
 
 public interface TestCycleService extends IService<TestCycle> {
 
+    /**
+     * 获取所有测试循环的详细信息
+     *
+     * @return 测试循环详情列表
+     */
     List<TestCycleDetailVO> getAllCycleDetails();
 
 }

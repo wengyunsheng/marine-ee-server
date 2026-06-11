@@ -9,6 +9,7 @@ import com.marine.service.FileUploadService;
 import com.marine.util.FileUploadUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +41,7 @@ public class FileUploadServiceImpl implements FileUploadService {
                 throw new IllegalArgumentException("设备不存在");
             }
 
-            if (device.getParentCode() != null) {
+            if (StringUtils.isNotBlank(device.getParentCode())) {
                 throw new IllegalArgumentException("只有父设备才能上传3D模型");
             }
 
@@ -49,7 +50,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
             String filePath = fileUploadUtil.upload(file);
             String fileName = file.getOriginalFilename();
-            String fileType = getFileExtension(fileName);
+            String fileType = fileUploadUtil.getFileExtension(fileName);
             String fileUrl = "/uploads/" + filePath.replace(basePath, "").replace("\\", "/");
 
 
@@ -80,10 +81,4 @@ public class FileUploadServiceImpl implements FileUploadService {
         }
     }
 
-    private String getFileExtension(String fileName) {
-        if (fileName == null || !fileName.contains(".")) {
-            return "";
-        }
-        return fileName.substring(fileName.lastIndexOf(".") + 1).toLowerCase();
-    }
 }

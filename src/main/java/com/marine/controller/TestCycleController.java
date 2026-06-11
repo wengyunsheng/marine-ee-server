@@ -4,7 +4,9 @@ import com.marine.entity.vo.ResultVO;
 import com.marine.entity.vo.TestCycleDetailVO;
 import com.marine.service.TestCycleService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -22,7 +24,7 @@ public class TestCycleController {
     private final TestCycleService testCycleService;
 
     /**
-     * 获取所有试验循环详情列表（包含工况数据）
+     * 获取所有试验循环详情列表
      *
      * @return 试验循环详情列表
      */
