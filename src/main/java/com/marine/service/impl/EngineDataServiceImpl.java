@@ -266,23 +266,13 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
         boolean saved = save(engineInfo);
         if (!saved) {
-            log.error("保存发动机信息失败");
-            return false;
+            throw new IllegalArgumentException("保存发动机信息失败");
         }
 
         Long engineId = engineInfo.getId();
 
         // 保存测试工况
-        EngineTestCondition condition = new EngineTestCondition();
-        condition.setEngineId(engineId);
-        condition.setAmbientTemp(importDTO.getAmbientTemp());
-        condition.setAmbientHumidity(importDTO.getAmbientHumidity());
-        condition.setAmbientPressure(importDTO.getAmbientPressure());
-        condition.setExhaustTemp(importDTO.getExhaustTemp());
-        condition.setCoolantInlet(importDTO.getCoolantInlet());
-        condition.setCoolantOutlet(importDTO.getCoolantOutlet());
-        condition.setLubeOilTemp(importDTO.getLubeOilTemp());
-        condition.setLubeOilPressure(importDTO.getLubeOilPressure());
+        EngineTestCondition condition = getEngineTestCondition(importDTO, engineId);
         testConditionMapper.insert(condition);
 
         Long conditionId = condition.getId();
@@ -290,16 +280,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         // 保存性能曲线
         if (CollectionUtils.isNotEmpty(importDTO.getPerformanceCurves())) {
             for (EngineImportDTO.PerformanceCurveDTO curveDTO : importDTO.getPerformanceCurves()) {
-                EnginePerformanceCurve curve = new EnginePerformanceCurve();
-                curve.setEngineId(engineId);
-                curve.setConditionId(conditionId);
-                curve.setLoadFactor(curveDTO.getLoadFactor());
-                curve.setPower(curveDTO.getPower());
-                curve.setSpeed(curveDTO.getSpeed());
-                curve.setBsfc(curveDTO.getBsfc());
-                curve.setBspc(curveDTO.getBspc());
-                curve.setBsgc(curveDTO.getBsgc());
-                curve.setBsec(curveDTO.getBsec());
+                EnginePerformanceCurve curve = getEnginePerformanceCurve(curveDTO, engineId, conditionId);
                 performanceCurveMapper.insert(curve);
             }
         }
@@ -312,6 +293,49 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     }
 
     /**
+     * 根据性能曲线DTO创建发动机性能曲线对象
+     *
+     * @param curveDTO    性能曲线数据传输对象
+     * @param engineId    发动机ID，用于关联性能曲线
+     * @param conditionId 测试工况ID，用于关联性能曲线
+     * @return 封装好的发动机性能曲线对象
+     */
+    private EnginePerformanceCurve getEnginePerformanceCurve(EngineImportDTO.PerformanceCurveDTO curveDTO, Long engineId, Long conditionId) {
+        EnginePerformanceCurve curve = new EnginePerformanceCurve();
+        curve.setEngineId(engineId);
+        curve.setConditionId(conditionId);
+        curve.setLoadFactor(curveDTO.getLoadFactor());
+        curve.setPower(curveDTO.getPower());
+        curve.setSpeed(curveDTO.getSpeed());
+        curve.setBsfc(curveDTO.getBsfc());
+        curve.setBspc(curveDTO.getBspc());
+        curve.setBsgc(curveDTO.getBsgc());
+        curve.setBsec(curveDTO.getBsec());
+        return curve;
+    }
+
+    /**
+     * 根据导入数据创建发动机测试工况对象
+     *
+     * @param importDTO 发动机导入数据传输对象
+     * @param engineId  发动机ID，用于关联测试工况
+     * @return 封装好的发动机测试工况对象
+     */
+    private EngineTestCondition getEngineTestCondition(EngineImportDTO importDTO, Long engineId) {
+        EngineTestCondition condition = new EngineTestCondition();
+        condition.setEngineId(engineId);
+        condition.setAmbientTemp(importDTO.getAmbientTemp());
+        condition.setAmbientHumidity(importDTO.getAmbientHumidity());
+        condition.setAmbientPressure(importDTO.getAmbientPressure());
+        condition.setExhaustTemp(importDTO.getExhaustTemp());
+        condition.setCoolantInlet(importDTO.getCoolantInlet());
+        condition.setCoolantOutlet(importDTO.getCoolantOutlet());
+        condition.setLubeOilTemp(importDTO.getLubeOilTemp());
+        condition.setLubeOilPressure(importDTO.getLubeOilPressure());
+        return condition;
+    }
+
+    /**
      * 将Excel单元格的值转换为字符串
      *
      * @param cell Excel单元格对象
@@ -321,31 +345,27 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         if (cell == null) {
             return null;
         }
-        try {
-            switch (cell.getCellType()) {
-                case STRING:
-                    String value = cell.getStringCellValue();
-                    return StringUtils.isNotBlank(value) ? value.trim() : null;
-                case NUMERIC:
-                    if (DateUtil.isCellDateFormatted(cell)) {
-                        return cell.getLocalDateTimeCellValue().toString();
-                    }
-                    // 数字转字符串，去除.0
-                    double num = cell.getNumericCellValue();
-                    if (num == (long) num) {
-                        return String.valueOf((long) num);
-                    }
-                    return String.valueOf(num);
-                case BOOLEAN:
-                    return String.valueOf(cell.getBooleanCellValue());
-                case FORMULA:
-                    return getCellValueAsString(cell.getCachedFormulaResultType() == CellType.NUMERIC ?
-                            cell : null);
-                default:
-                    return null;
-            }
-        } catch (Exception e) {
-            return null;
+        switch (cell.getCellType()) {
+            case STRING:
+                String value = cell.getStringCellValue();
+                return StringUtils.isNotBlank(value) ? value.trim() : null;
+            case NUMERIC:
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    return cell.getLocalDateTimeCellValue().toString();
+                }
+                // 数字转字符串，去除.0
+                double num = cell.getNumericCellValue();
+                if (num == (long) num) {
+                    return String.valueOf((long) num);
+                }
+                return String.valueOf(num);
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            case FORMULA:
+                return getCellValueAsString(cell.getCachedFormulaResultType() == CellType.NUMERIC ?
+                        cell : null);
+            default:
+                return null;
         }
     }
 
@@ -360,11 +380,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         if (StringUtils.isBlank(value)) {
             return null;
         }
-        try {
-            return (int) Double.parseDouble(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        return (int) Double.parseDouble(value);
     }
 
     /**
@@ -378,11 +394,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         if (StringUtils.isBlank(value)) {
             return null;
         }
-        try {
-            return new BigDecimal(value);
-        } catch (NumberFormatException e) {
-            return null;
-        }
+        return new BigDecimal(value);
     }
 
     @Override
@@ -425,35 +437,24 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
     @Override
     @Transactional
     public EvaluationResultVO completeEvaluation(Long engineId) {
-        try {
-            EvaluationResultVO result = calculateEfficiency(engineId);
-            if (result == null) {
-                log.warn("评估失败，无法计算能效指标: engineId={}", engineId);
-                return null;
-            }
+        EvaluationResultVO result = calculateEfficiency(engineId);
 
-            EngineInfo engineInfo = getById(engineId);
-            if (engineInfo == null) {
-                log.warn("发动机不存在: engineId={}", engineId);
-                return null;
-            }
-
-            engineInfo.setIsEvaluated(true);
-            engineInfo.setEfficiencyIndex(result.getEfficiencyIndex());
-            engineInfo.setEfficiencyLevel(result.getEfficiencyLevel());
-            engineInfo.setEfficiencyBaseValue(result.getBaseValue());
-            engineInfo.setEvaluationTime(LocalDateTime.now());
-
-            updateById(engineInfo);
-            return result;
-        } catch (Exception e) {
-            log.error("评估失败: engineId={}", engineId, e);
-            return null;
+        EngineInfo engineInfo = getById(engineId);
+        if (engineInfo == null) {
+            throw new IllegalArgumentException("发动机不存在");
         }
+
+        engineInfo.setIsEvaluated(true);
+        engineInfo.setEfficiencyIndex(result.getEfficiencyIndex());
+        engineInfo.setEfficiencyLevel(result.getEfficiencyLevel());
+        engineInfo.setEfficiencyBaseValue(result.getBaseValue());
+        engineInfo.setEvaluationTime(LocalDateTime.now());
+
+        updateById(engineInfo);
+        return result;
     }
 
-    @Override
-    public EvaluationResultVO calculateEfficiency(Long engineId) {
+    private EvaluationResultVO calculateEfficiency(Long engineId) {
         EngineInfo engineInfo = getById(engineId);
         if (engineInfo == null) {
             throw new IllegalArgumentException("发动机不存在");
@@ -564,8 +565,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         EvaluationResultVO result = new EvaluationResultVO();
         EngineInfo engineInfo = getById(engineId);
         if (engineInfo == null) {
-            log.warn("发动机不存在: engineId={}", engineId);
-            return null;
+            throw new IllegalArgumentException("发动机不存在");
         }
 
         result.setEfficiencyIndex(engineInfo.getEfficiencyIndex());
@@ -629,17 +629,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             return null;
         }
 
-        try {
-            String mode = powerMode.trim();
-            if (mode.endsWith("%")) {
-                String numberPart = mode.substring(0, mode.length() - 1);
-                return new BigDecimal(numberPart).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-            } else {
-                return new BigDecimal(mode);
-            }
-        } catch (NumberFormatException e) {
-            log.warn("无法解析功率模式: {}", powerMode);
-            return null;
+        String mode = powerMode.trim();
+        if (mode.endsWith("%")) {
+            String numberPart = mode.substring(0, mode.length() - 1);
+            return new BigDecimal(numberPart).divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
+        } else {
+            return new BigDecimal(mode);
         }
     }
 

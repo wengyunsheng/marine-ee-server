@@ -44,15 +44,6 @@ public interface EngineDataService {
     EvaluationResultVO completeEvaluation(Long engineId);
 
     /**
-     * 计算发动机能效
-     * 根据测试数据和性能曲线计算能效指标
-     *
-     * @param engineId 发动机ID
-     * @return 能效评估结果
-     */
-    EvaluationResultVO calculateEfficiency(Long engineId);
-
-    /**
      * 获取发动机的能效评估结果
      * 查询已保存的评估结果
      *
