@@ -15,4 +15,12 @@ public interface TestCycleService extends IService<TestCycle> {
      */
     List<TestCycleDetailVO> getAllCycleDetails();
 
+    /**
+     * 根据试验循环编号查询
+     *
+     * @param cycleCode 试验循环编号
+     * @return 试验循环列表
+     */
+    List<TestCycle> getByCycleCode(String cycleCode);
+
 }

@@ -57,6 +57,15 @@ public interface EfficiencyService {
     List<EngineEfficiency> getEngineList(String engineType);
 
     /**
+     * 获取发动机能效列表
+     *
+     * @param engineType    发动机类型
+     * @param emissionLevel 排放等级
+     * @return 发动机能效数据列表
+     */
+    List<EngineEfficiency> getEngineList(String engineType, String emissionLevel);
+
+    /**
      * 获取发电机能效列表
      *
      * @param generatorType 发电机类型

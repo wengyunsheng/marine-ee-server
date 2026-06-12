@@ -57,4 +57,13 @@ public class TestCycleServiceImpl extends ServiceImpl<TestCycleMapper, TestCycle
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<TestCycle> getByCycleCode(String cycleCode) {
+        LambdaQueryWrapper<TestCycle> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(TestCycle::getCycleCode, cycleCode)
+                .eq(TestCycle::getIsDeleted, 0)
+                .orderByAsc(TestCycle::getConditionNo);
+        return baseMapper.selectList(wrapper);
+    }
+
 }

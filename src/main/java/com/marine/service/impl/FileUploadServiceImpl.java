@@ -3,7 +3,7 @@ package com.marine.service.impl;
 import com.marine.entity.Device;
 import com.marine.entity.FileInfo;
 import com.marine.entity.vo.FileUploadResultVO;
-import com.marine.mapper.DeviceMapper;
+import com.marine.service.DeviceService;
 import com.marine.service.FileInfoService;
 import com.marine.service.FileUploadService;
 import com.marine.util.FileUploadUtil;
@@ -25,7 +25,7 @@ public class FileUploadServiceImpl implements FileUploadService {
 
     private final FileUploadUtil fileUploadUtil;
 
-    private final DeviceMapper deviceMapper;
+    private final DeviceService deviceService;
 
     private final FileInfoService fileInfoService;
 
@@ -35,7 +35,7 @@ public class FileUploadServiceImpl implements FileUploadService {
     @Override
     @Transactional
     public FileUploadResultVO upload3DModel(MultipartFile file, Long deviceId) throws IOException {
-        Device device = deviceMapper.selectById(deviceId);
+        Device device = deviceService.getById(deviceId);
         if (device == null) {
             throw new IllegalArgumentException("设备不存在");
         }
@@ -62,7 +62,7 @@ public class FileUploadServiceImpl implements FileUploadService {
         fileInfoService.save(fileInfo);
 
         device.setModelFileId(fileInfo.getId());
-        deviceMapper.updateById(device);
+        deviceService.updateById(device);
 
         FileUploadResultVO result = new FileUploadResultVO();
         result.setFileId(fileInfo.getId());

@@ -1,6 +1,8 @@
 package com.marine.service;
 
 import com.marine.entity.EngineInfo;
+import com.marine.entity.EnginePerformanceCurve;
+import com.marine.entity.EngineTestCondition;
 import com.marine.entity.dto.EngineImportDTO;
 import com.marine.entity.dto.EngineQueryDTO;
 import com.marine.entity.vo.EvaluationResultVO;
@@ -51,4 +53,21 @@ public interface EngineDataService {
      * @return 能效评估结果
      */
     EvaluationResultVO getEvaluation(Long engineId);
+
+    /**
+     * 根据发动机ID查询性能曲线
+     *
+     * @param engineId 发动机ID
+     * @return 发动机性能曲线列表
+     */
+    List<EnginePerformanceCurve> getByEngineId(Long engineId);
+
+    /**
+     * 根据发动机ID查询试验条件
+     *
+     * @param engineId 发动机ID
+     * @return 发动机试验条件
+     */
+    EngineTestCondition getConditionByEngineId(Long engineId);
+
 }

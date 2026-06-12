@@ -6,15 +6,22 @@ import com.marine.entity.*;
 import com.marine.entity.dto.EngineImportDTO;
 import com.marine.entity.dto.EngineQueryDTO;
 import com.marine.entity.vo.EvaluationResultVO;
-import com.marine.mapper.*;
+import com.marine.mapper.EngineInfoMapper;
+import com.marine.mapper.EnginePerformanceCurveMapper;
+import com.marine.mapper.EngineTestConditionMapper;
+import com.marine.service.DeviceService;
+import com.marine.service.EfficiencyService;
 import com.marine.service.EngineDataService;
+import com.marine.service.TestCycleService;
+import com.marine.util.ExcelUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,21 +38,23 @@ import java.util.*;
 @Service
 public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineInfo> implements EngineDataService {
 
-    private final DeviceMapper deviceMapper;
+    private final DeviceService deviceService;
 
     private final EngineTestConditionMapper testConditionMapper;
 
     private final EnginePerformanceCurveMapper performanceCurveMapper;
 
-    private final EngineEfficiencyMapper engineEfficiencyMapper;
+    private final TestCycleService testCycleService;
 
-    private final TestCycleMapper testCycleMapper;
+    private final EfficiencyService efficiencyService;
+
+    private final ExcelUtil excelUtil;
 
     @Override
     @Transactional
     public void importEngineFromExcel(Long deviceId, MultipartFile file) {
         try (InputStream inputStream = file.getInputStream();
-             Workbook workbook = createWorkbook(file, inputStream)) {
+             Workbook workbook = excelUtil.createWorkbook(file, inputStream)) {
 
             if (workbook == null) {
                 throw new IllegalArgumentException("无法解析Excel文件");
@@ -67,24 +76,6 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         } catch (Exception e) {
             throw new IllegalArgumentException("Excel文件格式错误: " + e.getMessage());
         }
-    }
-
-    /**
-     * 根据文件扩展名创建对应的Workbook对象
-     *
-     * @param file        上传的Excel文件
-     * @param inputStream 文件输入流
-     * @return Workbook对象，如果是其他格式则返回null
-     * @throws Exception 创建Workbook失败时抛出异常
-     */
-    private Workbook createWorkbook(MultipartFile file, InputStream inputStream) throws Exception {
-        String fileName = file.getOriginalFilename();
-        if (StringUtils.isNotBlank(fileName) && fileName.endsWith(".xlsx")) {
-            return new XSSFWorkbook(inputStream);
-        } else if (StringUtils.isNotBlank(fileName) && fileName.endsWith(".xls")) {
-            return new HSSFWorkbook(inputStream);
-        }
-        return null;
     }
 
     /**
@@ -114,7 +105,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
             // 检查序号列是否为空
             Cell seqCell = row.getCell(0);
-            if (seqCell == null || getCellValueAsString(seqCell) == null) {
+            if (seqCell == null || excelUtil.getCellValueAsString(seqCell) == null) {
                 continue;
             }
 
@@ -147,7 +138,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
             Cell cell = row.getCell(0);
             if (cell != null) {
-                String value = getCellValueAsString(cell);
+                String value = excelUtil.getCellValueAsString(cell);
                 if (value != null && value.matches("\\d+")) {
                     return i;
                 }
@@ -170,38 +161,38 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         // 基础信息（列索引从0开始）
         // 0: 序号（跳过）
         dto.setDeviceId(deviceId);
-        dto.setBrand(getCellValueAsString(row.getCell(1)));
-        dto.setModel(getCellValueAsString(row.getCell(2)));
-        dto.setCylinderCount(getCellValueAsInteger(row.getCell(3)));
-        dto.setCylinderBore(getCellValueAsInteger(row.getCell(4)));
-        dto.setFuelType(getCellValueAsString(row.getCell(5)));
-        dto.setFuelType1(getCellValueAsString(row.getCell(6)));
-        dto.setFuelType1CalorificValue(getCellValueAsBigDecimal(row.getCell(7)));
-        dto.setFuelType2(getCellValueAsString(row.getCell(8)));
-        dto.setFuelType2CalorificValue(getCellValueAsBigDecimal(row.getCell(9)));
-        dto.setFuelType3(getCellValueAsString(row.getCell(10)));
-        dto.setFuelType3CalorificValue(getCellValueAsBigDecimal(row.getCell(11)));
+        dto.setBrand(excelUtil.getCellValueAsString(row.getCell(1)));
+        dto.setModel(excelUtil.getCellValueAsString(row.getCell(2)));
+        dto.setCylinderCount(excelUtil.getCellValueAsInteger(row.getCell(3)));
+        dto.setCylinderBore(excelUtil.getCellValueAsInteger(row.getCell(4)));
+        dto.setFuelType(excelUtil.getCellValueAsString(row.getCell(5)));
+        dto.setFuelType1(excelUtil.getCellValueAsString(row.getCell(6)));
+        dto.setFuelType1CalorificValue(excelUtil.getCellValueAsBigDecimal(row.getCell(7)));
+        dto.setFuelType2(excelUtil.getCellValueAsString(row.getCell(8)));
+        dto.setFuelType2CalorificValue(excelUtil.getCellValueAsBigDecimal(row.getCell(9)));
+        dto.setFuelType3(excelUtil.getCellValueAsString(row.getCell(10)));
+        dto.setFuelType3CalorificValue(excelUtil.getCellValueAsBigDecimal(row.getCell(11)));
 
 
         // 用途和排放等级
-        dto.setEngineUsage(getCellValueAsString(row.getCell(12)));
-        dto.setEmissionStandard(getCellValueAsString(row.getCell(13)));
-        dto.setRatedSpeed(getCellValueAsInteger(row.getCell(14)));
-        dto.setRatedPower(getCellValueAsInteger(row.getCell(15)));
+        dto.setEngineUsage(excelUtil.getCellValueAsString(row.getCell(12)));
+        dto.setEmissionStandard(excelUtil.getCellValueAsString(row.getCell(13)));
+        dto.setRatedSpeed(excelUtil.getCellValueAsInteger(row.getCell(14)));
+        dto.setRatedPower(excelUtil.getCellValueAsInteger(row.getCell(15)));
 
         if ("WINGD".equals(dataSource)) {
-            dto.setAmbientTemp(getCellValueAsBigDecimal(row.getCell(16)));
-            dto.setAmbientPressure(getCellValueAsInteger(row.getCell(17)));
-            dto.setAmbientHumidity(getCellValueAsInteger(row.getCell(18)));
-            dto.setExhaustTemp(getCellValueAsInteger(row.getCell(19)));
-            dto.setCoolantInlet(getCellValueAsInteger(row.getCell(20)));
-            dto.setCoolantOutlet(getCellValueAsInteger(row.getCell(21)));
-            dto.setLubeOilTemp(getCellValueAsInteger(row.getCell(22)));
-            dto.setLubeOilPressure(getCellValueAsBigDecimal(row.getCell(23)));
+            dto.setAmbientTemp(excelUtil.getCellValueAsBigDecimal(row.getCell(16)));
+            dto.setAmbientPressure(excelUtil.getCellValueAsInteger(row.getCell(17)));
+            dto.setAmbientHumidity(excelUtil.getCellValueAsInteger(row.getCell(18)));
+            dto.setExhaustTemp(excelUtil.getCellValueAsInteger(row.getCell(19)));
+            dto.setCoolantInlet(excelUtil.getCellValueAsInteger(row.getCell(20)));
+            dto.setCoolantOutlet(excelUtil.getCellValueAsInteger(row.getCell(21)));
+            dto.setLubeOilTemp(excelUtil.getCellValueAsInteger(row.getCell(22)));
+            dto.setLubeOilPressure(excelUtil.getCellValueAsBigDecimal(row.getCell(23)));
         } else if ("MAN".equals(dataSource)) {
             // 环境条件
-            dto.setAmbientTemp(getCellValueAsBigDecimal(row.getCell(16)));
-            dto.setAmbientHumidity(getCellValueAsInteger(row.getCell(17)));
+            dto.setAmbientTemp(excelUtil.getCellValueAsBigDecimal(row.getCell(16)));
+            dto.setAmbientHumidity(excelUtil.getCellValueAsInteger(row.getCell(17)));
         }
 
         // 解析性能曲线（4个负荷点）
@@ -235,12 +226,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         for (int i = 0; i < loadFactors.length; i++) {
             int colOffset = startCol + i * 6;  // 每组6列
 
-            BigDecimal power = getCellValueAsBigDecimal(row.getCell(colOffset));
-            BigDecimal speed = getCellValueAsBigDecimal(row.getCell(colOffset + 1));
-            BigDecimal bsfc = getCellValueAsBigDecimal(row.getCell(colOffset + 2));
-            BigDecimal bspc = getCellValueAsBigDecimal(row.getCell(colOffset + 3));
-            BigDecimal bsgc = getCellValueAsBigDecimal(row.getCell(colOffset + 4));
-            BigDecimal bsec = getCellValueAsBigDecimal(row.getCell(colOffset + 5));
+            BigDecimal power = excelUtil.getCellValueAsBigDecimal(row.getCell(colOffset));
+            BigDecimal speed = excelUtil.getCellValueAsBigDecimal(row.getCell(colOffset + 1));
+            BigDecimal bsfc = excelUtil.getCellValueAsBigDecimal(row.getCell(colOffset + 2));
+            BigDecimal bspc = excelUtil.getCellValueAsBigDecimal(row.getCell(colOffset + 3));
+            BigDecimal bsgc = excelUtil.getCellValueAsBigDecimal(row.getCell(colOffset + 4));
+            BigDecimal bsec = excelUtil.getCellValueAsBigDecimal(row.getCell(colOffset + 5));
 
             EngineImportDTO.PerformanceCurveDTO curve = new EngineImportDTO.PerformanceCurveDTO();
             curve.setLoadFactor(BigDecimal.valueOf(loadFactors[i]));
@@ -335,68 +326,6 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         return condition;
     }
 
-    /**
-     * 将Excel单元格的值转换为字符串
-     *
-     * @param cell Excel单元格对象
-     * @return 单元格值的字符串表示，如果单元格为空或转换失败则返回null
-     */
-    private String getCellValueAsString(Cell cell) {
-        if (cell == null) {
-            return null;
-        }
-        switch (cell.getCellType()) {
-            case STRING:
-                String value = cell.getStringCellValue();
-                return StringUtils.isNotBlank(value) ? value.trim() : null;
-            case NUMERIC:
-                if (DateUtil.isCellDateFormatted(cell)) {
-                    return cell.getLocalDateTimeCellValue().toString();
-                }
-                // 数字转字符串，去除.0
-                double num = cell.getNumericCellValue();
-                if (num == (long) num) {
-                    return String.valueOf((long) num);
-                }
-                return String.valueOf(num);
-            case BOOLEAN:
-                return String.valueOf(cell.getBooleanCellValue());
-            case FORMULA:
-                return getCellValueAsString(cell.getCachedFormulaResultType() == CellType.NUMERIC ?
-                        cell : null);
-            default:
-                return null;
-        }
-    }
-
-    /**
-     * 将Excel单元格的值转换为整数
-     *
-     * @param cell Excel单元格对象
-     * @return 整数值，如果单元格为空或转换失败则返回null
-     */
-    private Integer getCellValueAsInteger(Cell cell) {
-        String value = getCellValueAsString(cell);
-        if (StringUtils.isBlank(value)) {
-            return null;
-        }
-        return (int) Double.parseDouble(value);
-    }
-
-    /**
-     * 将Excel单元格的值转换为BigDecimal类型
-     *
-     * @param cell Excel单元格对象
-     * @return BigDecimal值，如果单元格为空或转换失败则返回null
-     */
-    private BigDecimal getCellValueAsBigDecimal(Cell cell) {
-        String value = getCellValueAsString(cell);
-        if (StringUtils.isBlank(value)) {
-            return null;
-        }
-        return new BigDecimal(value);
-    }
-
     @Override
     public List<EngineInfo> queryEngines(EngineQueryDTO queryDTO) {
         LambdaQueryWrapper<EngineInfo> wrapper = new LambdaQueryWrapper<>();
@@ -419,15 +348,10 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         List<EngineInfo> engineList = list(wrapper);
 
         for (EngineInfo engine : engineList) {
-            LambdaQueryWrapper<EngineTestCondition> conditionWrapper = new LambdaQueryWrapper<>();
-            conditionWrapper.eq(EngineTestCondition::getEngineId, engine.getId());
-            EngineTestCondition condition = testConditionMapper.selectOne(conditionWrapper);
+            EngineTestCondition condition = getConditionByEngineId(engine.getId());
             engine.setTestCondition(condition);
 
-            LambdaQueryWrapper<EnginePerformanceCurve> curveWrapper = new LambdaQueryWrapper<>();
-            curveWrapper.eq(EnginePerformanceCurve::getEngineId, engine.getId())
-                    .orderByAsc(EnginePerformanceCurve::getLoadFactor);
-            List<EnginePerformanceCurve> curves = performanceCurveMapper.selectList(curveWrapper);
+            List<EnginePerformanceCurve> curves = getByEngineId(engine.getId());
             engine.setPerformanceCurves(curves);
         }
 
@@ -460,17 +384,12 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             throw new IllegalArgumentException("发动机不存在");
         }
 
-        Long deviceId = engineInfo.getDeviceId();
-        Device device = deviceMapper.selectById(deviceId);
+        Device device = deviceService.getById(engineInfo.getDeviceId());
         if (device == null) {
             throw new IllegalArgumentException("设备不存在");
         }
 
-        LambdaQueryWrapper<EnginePerformanceCurve> curveWrapper = new LambdaQueryWrapper<>();
-        curveWrapper.eq(EnginePerformanceCurve::getEngineId, engineId)
-                .orderByAsc(EnginePerformanceCurve::getLoadFactor);
-        List<EnginePerformanceCurve> curves = performanceCurveMapper.selectList(curveWrapper);
-
+        List<EnginePerformanceCurve> curves = getByEngineId(engineId);
         if (CollectionUtils.isEmpty(curves)) {
             throw new IllegalArgumentException("发动机性能曲线数据不完整");
         }
@@ -575,6 +494,21 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         return result;
     }
 
+    @Override
+    public List<EnginePerformanceCurve> getByEngineId(Long engineId) {
+        LambdaQueryWrapper<EnginePerformanceCurve> curveWrapper = new LambdaQueryWrapper<>();
+        curveWrapper.eq(EnginePerformanceCurve::getEngineId, engineId)
+                .orderByAsc(EnginePerformanceCurve::getLoadFactor);
+        return performanceCurveMapper.selectList(curveWrapper);
+    }
+
+    @Override
+    public EngineTestCondition getConditionByEngineId(Long engineId) {
+        LambdaQueryWrapper<EngineTestCondition> conditionWrapper = new LambdaQueryWrapper<>();
+        conditionWrapper.eq(EngineTestCondition::getEngineId, engineId);
+        return testConditionMapper.selectOne(conditionWrapper);
+    }
+
     /**
      * 根据发动机用途获取各负荷点的权重系数
      *
@@ -587,14 +521,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         }
 
         String cycleCode = determineCycleCode(engineUsage);
-
-        LambdaQueryWrapper<TestCycle> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(TestCycle::getCycleCode, cycleCode)
-                .eq(TestCycle::getIsDeleted, 0)
-                .orderByAsc(TestCycle::getConditionNo);
-
-        List<TestCycle> testCycles = testCycleMapper.selectList(wrapper);
-
+        List<TestCycle> testCycles = testCycleService.getByCycleCode(cycleCode);
         if (CollectionUtils.isEmpty(testCycles)) {
             throw new IllegalArgumentException("未找到试验循环 " + cycleCode + " 的加权系数数据");
         }
@@ -666,13 +593,7 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
      * @return 匹配的能效基值记录列表，按能效等级升序排列；如果未找到则返回null或空列表
      */
     private List<EngineEfficiency> findBaseValues(String deviceCode, String emissionStandard, BigDecimal singleCylinderPower) {
-        LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(EngineEfficiency::getEngineType, deviceCode);
-        wrapper.eq(EngineEfficiency::getEmissionLevel, emissionStandard)
-                .eq(EngineEfficiency::getIsDeleted, 0);
-
-        List<EngineEfficiency> allRecords = engineEfficiencyMapper.selectList(wrapper);
-
+        List<EngineEfficiency> allRecords = efficiencyService.getEngineList(deviceCode, emissionStandard);
         if (CollectionUtils.isEmpty(allRecords)) {
             return null;
         }

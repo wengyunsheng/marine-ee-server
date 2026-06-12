@@ -111,6 +111,15 @@ public class EfficiencyServiceImpl implements EfficiencyService {
     }
 
     @Override
+    public List<EngineEfficiency> getEngineList(String engineType, String emissionLevel) {
+        LambdaQueryWrapper<EngineEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(EngineEfficiency::getEngineType, engineType);
+        wrapper.eq(EngineEfficiency::getEmissionLevel, emissionLevel)
+                .eq(EngineEfficiency::getIsDeleted, 0);
+        return engineEfficiencyMapper.selectList(wrapper);
+    }
+
+    @Override
     public List<GeneratorEfficiency> getGeneratorList(String generatorType) {
         LambdaQueryWrapper<GeneratorEfficiency> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(GeneratorEfficiency::getIsDeleted, 0)
