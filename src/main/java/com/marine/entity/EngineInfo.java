@@ -1,6 +1,9 @@
 package com.marine.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
@@ -125,12 +128,6 @@ public class EngineInfo implements Serializable {
     private LocalDateTime createdTime;
 
     /**
-     * 是否已评估
-     */
-    @TableField("is_evaluated")
-    private Boolean isEvaluated;
-
-    /**
      * 能效指数
      */
     @TableField("efficiency_index")
@@ -147,13 +144,6 @@ public class EngineInfo implements Serializable {
      */
     @TableField("efficiency_base_value")
     private BigDecimal efficiencyBaseValue;
-
-    /**
-     * 评估时间
-     */
-    @TableField("evaluation_time")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime evaluationTime;
 
     /**
      * 测试工况（非数据库字段）

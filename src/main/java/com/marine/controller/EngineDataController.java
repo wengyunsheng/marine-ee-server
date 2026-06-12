@@ -1,8 +1,7 @@
 package com.marine.controller;
 
 import com.marine.entity.EngineInfo;
-import com.marine.entity.dto.EngineQueryDTO;
-import com.marine.entity.vo.EvaluationResultVO;
+import com.marine.entity.vo.EngineInfoVO;
 import com.marine.entity.vo.ResultVO;
 import com.marine.service.EngineDataService;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +9,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.validation.Valid;
 import java.util.List;
 
 /**
@@ -52,15 +50,14 @@ public class EngineDataController {
     }
 
     /**
-     * 查询发动机列表
+     * 查询所有发动机信息
      *
-     * @param queryDTO 查询条件
-     * @return 发动机信息列表
+     * @return 所有发动机信息
      */
-    @PostMapping("/list")
-    public ResultVO<List<EngineInfo>> queryEngines(@RequestBody @Valid EngineQueryDTO queryDTO) {
+    @GetMapping("/all")
+    public ResultVO<List<EngineInfoVO>> getAllEngines() {
         try {
-            List<EngineInfo> list = engineDataService.queryEngines(queryDTO);
+            List<EngineInfoVO> list = engineDataService.getAllEngines();
             return ResultVO.success(list);
         } catch (Exception e) {
             return ResultVO.error("查询失败: " + e.getMessage());
@@ -68,34 +65,18 @@ public class EngineDataController {
     }
 
     /**
-     * 获取发动机能效评估结果
+     * 查询发动机信息
      *
      * @param engineId 发动机ID
-     * @return 能效评估结果
+     * @return 发动机信息
      */
-    @GetMapping("/evaluate/{engineId}")
-    public ResultVO<EvaluationResultVO> getEvaluation(@PathVariable Long engineId) {
+    @GetMapping("/detail")
+    public ResultVO<EngineInfo> queryEngine(@RequestParam("engineId") Long engineId) {
         try {
-            EvaluationResultVO result = engineDataService.getEvaluation(engineId);
-            return ResultVO.success(result);
+            EngineInfo engineInfo = engineDataService.queryEngine(engineId);
+            return ResultVO.success(engineInfo);
         } catch (Exception e) {
             return ResultVO.error("查询失败: " + e.getMessage());
-        }
-    }
-
-    /**
-     * 完成发动机能效评估计算
-     *
-     * @param engineId 发动机ID
-     * @return 能效评估结果
-     */
-    @PostMapping("/evaluate/{engineId}")
-    public ResultVO<EvaluationResultVO> completeEvaluation(@PathVariable Long engineId) {
-        try {
-            EvaluationResultVO result = engineDataService.completeEvaluation(engineId);
-            return ResultVO.success(result);
-        } catch (Exception e) {
-            return ResultVO.error("计算失败: " + e.getMessage());
         }
     }
 

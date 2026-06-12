@@ -4,14 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.CellType;
-import org.apache.poi.ss.usermodel.DateUtil;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 
@@ -32,9 +30,9 @@ public class ExcelUtil {
      * @param file        上传的Excel文件
      * @param inputStream 文件输入流
      * @return Workbook对象，如果是其他格式则返回null
-     * @throws Exception 创建Workbook失败时抛出异常
+     * @throws IOException 创建Workbook失败时抛出异常
      */
-    public Workbook createWorkbook(MultipartFile file, InputStream inputStream) throws Exception {
+    public Workbook createWorkbook(MultipartFile file, InputStream inputStream) throws IOException {
         String fileName = file.getOriginalFilename();
         if (StringUtils.isNotBlank(fileName) && fileName.endsWith(".xlsx")) {
             return new XSSFWorkbook(inputStream);
@@ -104,5 +102,21 @@ public class ExcelUtil {
             return null;
         }
         return new BigDecimal(value);
+    }
+
+    /**
+     * 判断Excel行是否为空行
+     *
+     * @param row Excel行对象
+     * @return true表示空行，false表示非空行
+     */
+    public boolean isEmptyRow(Row row) {
+        for (int i = 0; i < row.getLastCellNum(); i++) {
+            Cell cell = row.getCell(i);
+            if (cell != null && !StringUtils.EMPTY.equals(getCellValueAsString(cell))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

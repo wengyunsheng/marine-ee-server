@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.marine.entity.*;
 import com.marine.entity.dto.EngineImportDTO;
-import com.marine.entity.dto.EngineQueryDTO;
+import com.marine.entity.vo.EngineInfoVO;
 import com.marine.entity.vo.EvaluationResultVO;
 import com.marine.mapper.EngineInfoMapper;
 import com.marine.mapper.EnginePerformanceCurveMapper;
@@ -27,11 +27,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -44,6 +45,8 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
     private final EnginePerformanceCurveMapper performanceCurveMapper;
 
+    private final EngineInfoMapper engineInfoMapper;
+
     private final TestCycleService testCycleService;
 
     private final EfficiencyService efficiencyService;
@@ -52,30 +55,27 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
 
     @Override
     @Transactional
-    public void importEngineFromExcel(Long deviceId, MultipartFile file) {
-        try (InputStream inputStream = file.getInputStream();
-             Workbook workbook = excelUtil.createWorkbook(file, inputStream)) {
+    public void importEngineFromExcel(Long deviceId, MultipartFile file) throws IOException {
+        Workbook workbook = excelUtil.createWorkbook(file, file.getInputStream());
 
-            if (workbook == null) {
-                throw new IllegalArgumentException("无法解析Excel文件");
-            }
-
-            int sheetCount = workbook.getNumberOfSheets();
-
-            for (int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
-                Sheet sheet = workbook.getSheetAt(sheetIndex);
-                String sheetName = sheet.getSheetName();
-                if (!"MAN".equals(sheetName) && !"WINGD".equals(sheetName)) {
-                    continue;
-                }
-                log.info("开始解析Sheet: {}", sheetName);
-                int successCount = parseSheet(deviceId, sheet, sheetName);
-                log.info("Sheet {} 导入成功 {} 条", sheetName, successCount);
-            }
-
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Excel文件格式错误: " + e.getMessage());
+        if (workbook == null) {
+            throw new IllegalArgumentException("无法解析Excel文件");
         }
+
+        int sheetCount = workbook.getNumberOfSheets();
+
+        for (int sheetIndex = 0; sheetIndex < sheetCount; sheetIndex++) {
+            Sheet sheet = workbook.getSheetAt(sheetIndex);
+            String sheetName = sheet.getSheetName();
+            if (!"MAN".equals(sheetName) && !"WINGD".equals(sheetName)) {
+                continue;
+            }
+            log.info("开始解析Sheet: {}", sheetName);
+            int successCount = parseSheet(deviceId, sheet, sheetName);
+            log.info("Sheet {} 导入成功 {} 条", sheetName, successCount);
+        }
+
+        workbook.close();
     }
 
     /**
@@ -276,6 +276,9 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
             }
         }
 
+        // 完成发动机的完整能效评估
+        completeEvaluation(engineInfo);
+
         log.info("导入成功: engineId={}, conditionId={}, curveCount={}",
                 engineId, conditionId,
                 CollectionUtils.isNotEmpty(importDTO.getPerformanceCurves()) ? importDTO.getPerformanceCurves().size() : 0);
@@ -326,70 +329,29 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         return condition;
     }
 
-    @Override
-    public List<EngineInfo> queryEngines(EngineQueryDTO queryDTO) {
-        LambdaQueryWrapper<EngineInfo> wrapper = new LambdaQueryWrapper<>();
+    /**
+     * 完成发动机的完整能效评估
+     * 包括计算能效指数、确定能效等级等
+     *
+     * @param engineInfo 发动机
+     */
+    private void completeEvaluation(EngineInfo engineInfo) {
+        EvaluationResultVO result = calculateEfficiency(engineInfo);
 
-        if (queryDTO.getDeviceId() != null) {
-            wrapper.eq(EngineInfo::getDeviceId, queryDTO.getDeviceId());
-        }
-        if (StringUtils.isNotBlank(queryDTO.getBrand())) {
-            wrapper.like(EngineInfo::getBrand, queryDTO.getBrand());
-        }
-        if (StringUtils.isNotBlank(queryDTO.getModel())) {
-            wrapper.like(EngineInfo::getModel, queryDTO.getModel());
-        }
-        if (StringUtils.isNotBlank(queryDTO.getEmissionStandard())) {
-            wrapper.eq(EngineInfo::getEmissionStandard, queryDTO.getEmissionStandard());
-        }
-
-        wrapper.orderByDesc(EngineInfo::getCreatedTime);
-
-        List<EngineInfo> engineList = list(wrapper);
-
-        for (EngineInfo engine : engineList) {
-            EngineTestCondition condition = getConditionByEngineId(engine.getId());
-            engine.setTestCondition(condition);
-
-            List<EnginePerformanceCurve> curves = getByEngineId(engine.getId());
-            engine.setPerformanceCurves(curves);
-        }
-
-        return engineList;
-    }
-
-    @Override
-    @Transactional
-    public EvaluationResultVO completeEvaluation(Long engineId) {
-        EvaluationResultVO result = calculateEfficiency(engineId);
-
-        EngineInfo engineInfo = getById(engineId);
-        if (engineInfo == null) {
-            throw new IllegalArgumentException("发动机不存在");
-        }
-
-        engineInfo.setIsEvaluated(true);
         engineInfo.setEfficiencyIndex(result.getEfficiencyIndex());
         engineInfo.setEfficiencyLevel(result.getEfficiencyLevel());
         engineInfo.setEfficiencyBaseValue(result.getBaseValue());
-        engineInfo.setEvaluationTime(LocalDateTime.now());
 
         updateById(engineInfo);
-        return result;
     }
 
-    private EvaluationResultVO calculateEfficiency(Long engineId) {
-        EngineInfo engineInfo = getById(engineId);
-        if (engineInfo == null) {
-            throw new IllegalArgumentException("发动机不存在");
-        }
-
+    private EvaluationResultVO calculateEfficiency(EngineInfo engineInfo) {
         Device device = deviceService.getById(engineInfo.getDeviceId());
         if (device == null) {
             throw new IllegalArgumentException("设备不存在");
         }
 
-        List<EnginePerformanceCurve> curves = getByEngineId(engineId);
+        List<EnginePerformanceCurve> curves = getByEngineId(engineInfo.getId());
         if (CollectionUtils.isEmpty(curves)) {
             throw new IllegalArgumentException("发动机性能曲线数据不完整");
         }
@@ -474,23 +436,8 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         result.setPassed(efficiencyLevel <= 2);
 
         log.info("评估完成: engineId={}, 能效指标={}, 能效等级={}级, 基值={}, 单缸功率={}",
-                engineId, efficiencyIndex, efficiencyLevel, baseValueRecord.getBaseValue(), singleCylinderPower);
+                engineInfo.getId(), efficiencyIndex, efficiencyLevel, baseValueRecord.getBaseValue(), singleCylinderPower);
 
-        return result;
-    }
-
-    @Override
-    public EvaluationResultVO getEvaluation(Long engineId) {
-        EvaluationResultVO result = new EvaluationResultVO();
-        EngineInfo engineInfo = getById(engineId);
-        if (engineInfo == null) {
-            throw new IllegalArgumentException("发动机不存在");
-        }
-
-        result.setEfficiencyIndex(engineInfo.getEfficiencyIndex());
-        result.setEfficiencyLevel(engineInfo.getEfficiencyLevel());
-        result.setBaseValue(engineInfo.getEfficiencyBaseValue());
-        result.setPassed(engineInfo.getEfficiencyLevel() <= 2);
         return result;
     }
 
@@ -507,6 +454,26 @@ public class EngineDataServiceImpl extends ServiceImpl<EngineInfoMapper, EngineI
         LambdaQueryWrapper<EngineTestCondition> conditionWrapper = new LambdaQueryWrapper<>();
         conditionWrapper.eq(EngineTestCondition::getEngineId, engineId);
         return testConditionMapper.selectOne(conditionWrapper);
+    }
+
+    @Override
+    public EngineInfo queryEngine(Long engineId) {
+        EngineInfo engineInfo = engineInfoMapper.selectById(engineId);
+
+        EngineTestCondition condition = getConditionByEngineId(engineInfo.getId());
+        engineInfo.setTestCondition(condition);
+
+        List<EnginePerformanceCurve> curves = getByEngineId(engineInfo.getId());
+        engineInfo.setPerformanceCurves(curves);
+        return engineInfo;
+    }
+
+    @Override
+    public List<EngineInfoVO> getAllEngines() {
+        List<EngineInfo> engines = engineInfoMapper.selectList(null);
+        return engines.stream()
+                .map(engine -> new EngineInfoVO(engine.getId(), "品牌：" + engine.getBrand() + " 型号：" + engine.getModel()))
+                .collect(Collectors.toList());
     }
 
     /**
