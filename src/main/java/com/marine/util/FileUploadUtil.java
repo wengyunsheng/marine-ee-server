@@ -12,9 +12,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
-import java.util.Date;
 
 /**
  * 文件上传工具类
@@ -52,8 +50,7 @@ public class FileUploadUtil {
             throw new IllegalArgumentException("文件大小超过限制，最大: " + (fileUploadConfig.getMaxSize() / 1024 / 1024) + "MB");
         }
 
-        String datePath = new SimpleDateFormat("yyyy/MM/dd").format(new Date());
-        String uploadPath = fileUploadConfig.getPath() + datePath + "/";
+        String uploadPath = fileUploadConfig.getPath();
 
         File dir = new File(uploadPath);
         if (!dir.exists()) {
