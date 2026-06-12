@@ -222,4 +222,34 @@ public class EfficiencyController {
             return ResultVO.error("查询失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 查询脱硝设备能效等级列表
+     *
+     * @return 能效等级列表
+     */
+    @GetMapping("/denitrification/list")
+    public ResultVO<List<DenitrificationEfficiency>> getDenitrificationList() {
+        try {
+            List<DenitrificationEfficiency> list = efficiencyService.getDenitrificationList();
+            return ResultVO.success(list);
+        } catch (Exception e) {
+            return ResultVO.error("查询失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 查询脱硫设备能效等级列表
+     *
+     * @return 能效等级列表
+     */
+    @GetMapping("/desulfurization/list")
+    public ResultVO<List<DesulfurizationEfficiency>> getDesulfurizationList() {
+        try {
+            List<DesulfurizationEfficiency> list = efficiencyService.getDesulfurizationList();
+            return ResultVO.success(list);
+        } catch (Exception e) {
+            return ResultVO.error("查询失败: " + e.getMessage());
+        }
+    }
 }

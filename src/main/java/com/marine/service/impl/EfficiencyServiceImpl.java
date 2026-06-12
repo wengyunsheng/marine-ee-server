@@ -40,6 +40,10 @@ public class EfficiencyServiceImpl implements EfficiencyService {
 
     private final WindlassEfficiencyMapper windlassEfficiencyMapper;
 
+    private final DenitrificationEfficiencyMapper denitrificationEfficiencyMapper;
+
+    private final DesulfurizationEfficiencyMapper desulfurizationEfficiencyMapper;
+
     @Override
     public List<AhuEfficiency> getAhuList() {
         LambdaQueryWrapper<AhuEfficiency> wrapper = new LambdaQueryWrapper<>();
@@ -82,7 +86,7 @@ public class EfficiencyServiceImpl implements EfficiencyService {
     public List<CraneEfficiency> getCraneList() {
         LambdaQueryWrapper<CraneEfficiency> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(CraneEfficiency::getIsDeleted, 0)
-                .orderByAsc(CraneEfficiency::getSort);
+                .orderByAsc(CraneEfficiency::getId);
         return craneEfficiencyMapper.selectList(wrapper);
     }
 
@@ -165,5 +169,24 @@ public class EfficiencyServiceImpl implements EfficiencyService {
                 .eq(StringUtils.isNotBlank(windlassType), WindlassEfficiency::getWindlassType, windlassType)
                 .orderByAsc(WindlassEfficiency::getEfficiencyLevel);
         return windlassEfficiencyMapper.selectList(wrapper);
+    }
+
+    @Override
+    public List<DenitrificationEfficiency> getDenitrificationList() {
+        LambdaQueryWrapper<DenitrificationEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DenitrificationEfficiency::getIsDeleted, 0)
+                .orderByAsc(DenitrificationEfficiency::getEmissionTier)
+                .orderByAsc(DenitrificationEfficiency::getEfficiencyLevel);
+        return denitrificationEfficiencyMapper.selectList(wrapper);
+    }
+
+    @Override
+    public List<DesulfurizationEfficiency> getDesulfurizationList() {
+        LambdaQueryWrapper<DesulfurizationEfficiency> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DesulfurizationEfficiency::getIsDeleted, 0)
+                .orderByAsc(DesulfurizationEfficiency::getDeviceType)
+                .orderByAsc(DesulfurizationEfficiency::getOperationMode)
+                .orderByAsc(DesulfurizationEfficiency::getEfficiencyLevel);
+        return desulfurizationEfficiencyMapper.selectList(wrapper);
     }
 }

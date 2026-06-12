@@ -100,4 +100,18 @@ public interface EfficiencyService {
      * @return 锚机能效数据列表
      */
     List<WindlassEfficiency> getWindlassList(String windlassType);
+
+    /**
+     * 获取脱硝设备能效列表
+     *
+     * @return 脱硝设备能效数据列表
+     */
+    List<DenitrificationEfficiency> getDenitrificationList();
+
+    /**
+     * 获取脱硫设备能效列表
+     *
+     * @return 脱硫设备能效数据列表
+     */
+    List<DesulfurizationEfficiency> getDesulfurizationList();
 }

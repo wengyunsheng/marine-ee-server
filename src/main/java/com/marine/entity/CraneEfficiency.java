@@ -1,6 +1,9 @@
 package com.marine.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Data;
 
@@ -63,36 +66,11 @@ public class CraneEfficiency implements Serializable {
     private String thresholdExpression;
 
     /**
-     * 排序
-     */
-    @TableField("sort")
-    private Integer sort;
-
-    /**
      * 创建时间
      */
     @TableField("create_time")
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;
-
-    /**
-     * 更新时间
-     */
-    @TableField("update_time")
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
-    private LocalDateTime updateTime;
-
-    /**
-     * 创建人
-     */
-    @TableField("create_by")
-    private String createBy;
-
-    /**
-     * 更新人
-     */
-    @TableField("update_by")
-    private String updateBy;
 
     /**
      * 是否删除（0-未删除，1-已删除）
